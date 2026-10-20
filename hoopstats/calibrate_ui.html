@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Court Calibration</title>
+<style>
+:root{--bg:#f4f3ef;--panel:#fff;--ink:#1d1f23;--ink2:#5b6068;--ink3:#8b9097;--line:#e1ded6;--accent:#2f5bd3;--ok:#1f8f5f;--warn:#b5651d;--mag:#e0249a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121417;--panel:#1b1e23;--ink:#eceef1;--ink2:#a9afb8;--ink3:#757c86;--line:#2d3239;--accent:#7b9cff;--ok:#3fbf86;--warn:#e0974e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:16px;margin:0 8px 0 0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:5px 10px;cursor:pointer;font-size:13px;color:var(--ink2)}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab .n{font-weight:700}
+.tab.done::after{content:" ✓";color:var(--ok)}
+.tab.on.done::after{color:#7fe0b0}
+.spacer{flex:1}
+button.main{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:8px 14px;font-weight:650;cursor:pointer;font-size:14px}
+button.sec{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;padding:14px 16px}
+.imgbox{position:relative;background:#000;border-radius:12px;overflow:hidden;align-self:start}
+canvas#img{display:block;width:100%;height:auto;cursor:crosshair}
+canvas#loupe{position:absolute;width:180px;height:180px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5);pointer-events:none;display:none}
+.side{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}
+.now{font-size:15px;font-weight:650;margin-bottom:8px}
+.now small{display:block;font-weight:400;color:var(--ink2);font-size:12.5px}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+svg.court{width:100%;height:auto;display:block}
+.lm{cursor:pointer}
+.list{max-height:240px;overflow:auto;font-size:12.5px}
+.list div{padding:3px 6px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.list div:hover{background:var(--bg)}
+.list div.cur{background:var(--accent);color:#fff}
+.list div.placed span:last-child{color:var(--ok);font-weight:700}
+.list div.cur span:last-child{color:#fff}
+.fit{font-size:13px;color:var(--ink2)}
+.fit b{color:var(--ink)}
+.msg{padding:10px 12px;border-radius:10px;font-size:13.5px;display:none}
+.msg.ok{display:block;background:color-mix(in srgb,var(--ok) 15%,var(--panel));border:1px solid var(--ok)}
+.msg.err{display:block;background:color-mix(in srgb,var(--warn) 15%,var(--panel));border:1px solid var(--warn)}
+.help{font-size:12.5px;color:var(--ink2)}
+kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;font-size:11.5px;background:var(--bg)}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Court calibration</h1>
+  <div class="tabs" id="tabs"></div>
+  <span class="spacer"></span>
+  <span class="fit" id="fit"></span>
+  <button class="main" id="save">Save calibration</button>
+</header>
+<div class="wrap">
+  <div>
+    <div class="imgbox"><canvas id="img"></canvas><canvas id="loupe" width="180" height="180"></canvas></div>
+    <div class="msg" id="msg" style="margin-top:12px"></div>
+  </div>
+  <div class="side">
+    <div class="card">
+      <h3>Click this on the frame</h3>
+      <div class="now" id="now"></div>
+      <div class="row">
+        <button class="sec" id="skip">Skip <kbd>S</kbd></button>
+        <button class="sec" id="undo">Undo <kbd>U</kbd></button>
+        <button class="sec" id="clear">Clear view</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Court diagram (bottom = camera side)</h3>
+      <svg class="court" id="diagram"></svg>
+      <div class="help" style="margin-top:6px">Click any dot to pick that landmark. Green = placed on this view.</div>
+    </div>
+    <div class="card">
+      <h3>Landmarks</h3>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="card help">
+      Mark <b>5 or more</b> landmarks per view (4 is the minimum), spread across the frame, not all on one line. Landmarks around a basket
+      (lane corners, free-throw line ends, 3-point line) are usually easiest. Magenta lines show the
+      fitted court. If they line up with the painted lines, the view is good. Views you leave empty are
+      skipped. Hold the mouse over the frame for a magnifier.
+    </div>
+  </div>
+</div>
+<script>
+const CFG = __CONFIG__;
+const C = CFG.court, L = C.length, W = C.width;
+const LM = CFG.landmarks;
+const state = {view: 0, cur: 0, pts: CFG.views.map(() => ({}))};   // pts[view][landmarkId] = [u,v]
+// prefill from a previous calibration of the same views
+(CFG.previous || []).forEach(kf => {
+  const vi = CFG.views.findIndex(v => Math.abs(v.t - kf.t) < 0.6);
+  if (vi < 0) return;
+  (kf.points || []).forEach(p => { const lm = LM.find(l => l.name === p.name); if (lm) state.pts[vi][lm.id] = p.img; });
+});
+const $ = s => document.querySelector(s);
+const canvas = $('#img'), ctx = canvas.getContext('2d'), loupe = $('#loupe'), lctx = loupe.getContext('2d');
+const images = CFG.views.map(v => { const im = new Image(); im.src = v.img; im.onload = () => { if (v.id === state.view) draw(); }; return im; });
+
+/* ---------- homography (court ft -> image px), least squares DLT ---------- */
+function solve(A, b){ const n = b.length; const M = A.map((r, i) => [...r, b[i]]);
+  for (let c = 0; c < n; c++){ let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    [M[c], M[p]] = [M[p], M[c]]; if (Math.abs(M[c][c]) < 1e-12) return null;
+    for (let r = 0; r < n; r++){ if (r === c) continue; const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; } }
+  return M.map((r, i) => r[n] / r[i]); }
+function fitH(pairs){
+  if (pairs.length < 4) return null;
+  const s = 1 / 1000;   // scale image coords for conditioning
+  const AtA = Array.from({length: 8}, () => Array(8).fill(0)), Atb = Array(8).fill(0);
+  const add = (row, val) => { for (let i = 0; i < 8; i++){ Atb[i] += row[i] * val; for (let j = 0; j < 8; j++) AtA[i][j] += row[i] * row[j]; } };
+  pairs.forEach(([x, y, u, v]) => { u *= s; v *= s; x /= 50; y /= 50;
+    add([x, y, 1, 0, 0, 0, -u * x, -u * y], u); add([0, 0, 0, x, y, 1, -v * x, -v * y], v); });
+  const h = solve(AtA, Atb); if (!h) return null;
+  // undo the normalisation: H = diag(1/s) * Hn * diag(1/50,1/50,1)
+  const Hn = [[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1]];
+  return Hn.map((r, i) => r.map((v, j) => v * (i < 2 ? 1 / s : 1) * (j < 2 ? 1 / 50 : 1)));
+}
+const proj = (H, x, y) => { const w = H[2][0] * x + H[2][1] * y + H[2][2];
+  return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w, (H[1][0] * x + H[1][1] * y + H[1][2]) / w, w]; };
+
+/* ---------- court geometry (polylines in court feet) ---------- */
+function courtLines(){
+  const ls = [], cy = W / 2, arc = (cx, cyy, r, a0, a1, n = 40) => { const p = [];
+    for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; p.push([cx + r * Math.cos(a), cyy + r * Math.sin(a)]); } return p; };
+  const seg = (a, b, n = 20) => Array.from({length: n + 1}, (_, i) => [a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]);
+  ls.push(seg([0, 0], [L, 0], 60), seg([L, 0], [L, W], 40), seg([L, W], [0, W], 60), seg([0, W], [0, 0], 40));
+  ls.push(seg([L / 2, 0], [L / 2, W], 40), arc(L / 2, cy, 6, 0, 360));
+  [[0, 1], [L, -1]].forEach(([x0, s]) => {
+    const lw = C.lane_width / 2, ft = x0 + s * C.ft_line, hx = x0 + s * C.hoop_offset;
+    ls.push(seg([x0, cy - lw], [ft, cy - lw]), seg([x0, cy + lw], [ft, cy + lw]), seg([ft, cy - lw], [ft, cy + lw]), arc(ft, cy, 6, 0, 360));
+    if (C.three_pt){ const r = C.three_pt, c = C.corner_three ?? r, bd = Math.sqrt(Math.max(r * r - c * c, 0)), ang = Math.atan2(c, bd) * 180 / Math.PI;
+      ls.push(seg([x0, cy - c], [hx + s * bd, cy - c]), seg([x0, cy + c], [hx + s * bd, cy + c]));
+      ls.push(s > 0 ? arc(hx, cy, r, -ang, ang) : arc(hx, cy, r, 180 - ang, 180 + ang)); }
+  });
+  return ls;
+}
+const LINES = courtLines();
+
+/* ---------- drawing ---------- */
+function curPairs(vi){ return Object.entries(state.pts[vi]).map(([id, uv]) => { const l = LM[id]; return [l.x, l.y, uv[0], uv[1]]; }); }
+function draw(){
+  const im = images[state.view];
+  if (!im.complete || !im.naturalWidth) return;
+  canvas.width = im.naturalWidth; canvas.height = im.naturalHeight;
+  ctx.drawImage(im, 0, 0);
+  const pairs = curPairs(state.view), H = fitH(pairs);
+  if (H){
+    ctx.strokeStyle = '#ff2fb0'; ctx.lineWidth = 2 * canvas.width / Math.max(1, canvas.getBoundingClientRect().width);
+    LINES.forEach(pl => { ctx.beginPath(); let pen = false;
+      pl.forEach(([x, y]) => { const [u, v, w] = proj(H, x, y);
+        const ok = w > 0 && u > -3 * canvas.width && u < 4 * canvas.width && v > -3 * canvas.height && v < 4 * canvas.height;
+        if (!ok){ pen = false; return; } if (!pen){ ctx.moveTo(u, v); pen = true; } else ctx.lineTo(u, v); });
+      ctx.stroke(); });
+    const err = pairs.reduce((a, [x, y, u, v]) => { const [pu, pv] = proj(H, x, y); return a + Math.hypot(pu - u, pv - v); }, 0) / pairs.length;
+    $('#fit').innerHTML = `View ${state.view + 1}: <b>${pairs.length}</b> points` + (pairs.length > 4 ? ` · fit error <b>${err.toFixed(1)} px</b>` + (err > 12 ? ' (check a point)' : '') : ' · add a 5th point to check the fit');
+  } else $('#fit').innerHTML = `View ${state.view + 1}: <b>${pairs.length}</b>/4 points`;
+  const k = canvas.width / Math.max(1, canvas.getBoundingClientRect().width);   // keep markers a fixed on-screen size
+  Object.entries(state.pts[state.view]).forEach(([id, [u, v]]) => {
+    ctx.fillStyle = +id === state.cur ? '#ffd400' : '#18e07a'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5 * k;
+    ctx.beginPath(); ctx.arc(u, v, 5 * k, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.font = `bold ${13 * k}px sans-serif`; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3 * k;
+    const lab = String(+id + 1); ctx.strokeText(lab, u + 7 * k, v - 6 * k); ctx.fillText(lab, u + 7 * k, v - 6 * k); });
+  renderSide();
+}
+function renderSide(){
+  const l = LM[state.cur];
+  $('#now').innerHTML = l ? `${state.cur + 1}. ${l.name}<small>court position (${l.x.toFixed(1)} ft, ${l.y.toFixed(1)} ft)</small>` : 'All landmarks placed';
+  const P = (x, y) => [x, W - y];
+  let s = `<rect x="0" y="0" width="${L}" height="${W}" fill="var(--bg)" stroke="var(--ink3)" stroke-width=".35"/>`;
+  LINES.forEach(pl => { s += `<polyline fill="none" stroke="var(--ink3)" stroke-width=".3" points="${pl.map(([x, y]) => P(x, y).join(',')).join(' ')}"/>`; });
+  LM.forEach(m => { const [x, y] = P(m.x, m.y); const placed = state.pts[state.view][m.id];
+    s += `<g class="lm" data-id="${m.id}"><circle cx="${x}" cy="${y}" r="${m.id === state.cur ? 2.2 : 1.4}" fill="${placed ? 'var(--ok)' : 'var(--panel)'}" stroke="${m.id === state.cur ? 'var(--accent)' : 'var(--ink2)'}" stroke-width="${m.id === state.cur ? .7 : .35}"/></g>`; });
+  const d = $('#diagram'); d.setAttribute('viewBox', `-3 -3 ${L + 6} ${W + 6}`); d.innerHTML = s;
+  d.querySelectorAll('.lm').forEach(g => g.onclick = () => { state.cur = +g.dataset.id; draw(); });
+  $('#list').innerHTML = LM.map(m => `<div data-id="${m.id}" class="${m.id === state.cur ? 'cur' : ''} ${state.pts[state.view][m.id] ? 'placed' : ''}"><span>${m.id + 1}. ${m.name}</span><span>${state.pts[state.view][m.id] ? '✓' : ''}</span></div>`).join('');
+  $('#list').querySelectorAll('div').forEach(dv => dv.onclick = () => { state.cur = +dv.dataset.id; draw(); });
+  const cur = $('#list .cur'); if (cur) cur.scrollIntoView({block: 'nearest'});
+  $('#tabs').innerHTML = CFG.views.map((v, i) => { const n = Object.keys(state.pts[i]).length;
+    return `<button class="tab ${i === state.view ? 'on' : ''} ${n >= 4 ? 'done' : ''}" data-i="${i}"><span class="n">View ${i + 1}</span> · ${v.share}% of game · ${n} pts</button>`; }).join('');
+  $('#tabs').querySelectorAll('.tab').forEach(b => b.onclick = () => { state.view = +b.dataset.i; state.cur = nextFree(0); draw(); });
+}
+function nextFree(from){ for (let k = 0; k < LM.length; k++){ const id = (from + k) % LM.length; if (!state.pts[state.view][id]) return id; } return from; }
+
+/* ---------- interaction ---------- */
+const toImg = ev => { const r = canvas.getBoundingClientRect(); return [(ev.clientX - r.left) * canvas.width / r.width, (ev.clientY - r.top) * canvas.height / r.height]; };
+const hist = [];
+canvas.addEventListener('click', ev => {
+  const [u, v] = toImg(ev);
+  hist.push([state.view, state.cur, state.pts[state.view][state.cur]]);
+  state.pts[state.view][state.cur] = [Math.round(u * 10) / 10, Math.round(v * 10) / 10];
+  state.cur = nextFree(state.cur + 1); draw(); moveLoupe(ev);
+});
+function moveLoupe(ev){
+  const [u, v] = toImg(ev), r = canvas.getBoundingClientRect(), box = canvas.parentElement.getBoundingClientRect();
+  const Z = 4, S = 180;
+  lctx.fillStyle = '#000'; lctx.fillRect(0, 0, S, S);
+  lctx.imageSmoothingEnabled = false;
+  lctx.drawImage(canvas, u - S / (2 * Z), v - S / (2 * Z), S / Z, S / Z, 0, 0, S, S);
+  lctx.strokeStyle = '#ffd400'; lctx.lineWidth = 1; lctx.beginPath(); lctx.moveTo(S / 2, 0); lctx.lineTo(S / 2, S); lctx.moveTo(0, S / 2); lctx.lineTo(S, S / 2); lctx.stroke();
+  const x = ev.clientX - box.left, y = ev.clientY - box.top;
+  loupe.style.left = (x + 200 > box.width ? x - 200 : x + 20) + 'px'; loupe.style.top = Math.max(0, y - 200) + 'px';
+  loupe.style.display = 'block';
+}
+canvas.addEventListener('mousemove', moveLoupe);
+canvas.addEventListener('mouseleave', () => loupe.style.display = 'none');
+$('#skip').onclick = () => { state.cur = nextFree(state.cur + 1) === state.cur ? (state.cur + 1) % LM.length : nextFree(state.cur + 1); draw(); };
+$('#undo').onclick = () => { const h = hist.pop(); if (!h) return; const [vi, id, prev] = h; state.view = vi;
+  if (prev) state.pts[vi][id] = prev; else delete state.pts[vi][id]; state.cur = id; draw(); };
+$('#clear').onclick = () => { state.pts[state.view] = {}; state.cur = 0; draw(); };
+document.addEventListener('keydown', e => { if (e.key === 's' || e.key === 'S') $('#skip').click(); if (e.key === 'u' || e.key === 'U') $('#undo').click(); });
+$('#save').onclick = async () => {
+  const views = CFG.views.map((v, i) => ({id: v.id, points: Object.entries(state.pts[i]).map(([id, uv]) =>
+    ({name: LM[id].name, court: [LM[id].x, LM[id].y], img: uv}))}));
+  const m = $('#msg');
+  try {
+    const r = await fetch('/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({views})});
+    const j = await r.json();
+    if (j.ok){ m.className = 'msg ok'; m.innerHTML = '<b>Saved.</b> ' + j.views.map(v => `View ${v.id + 1}: ${v.points} points, ${v.error} px error`).join(' · ') + '<br>You can close this tab. The analysis continues in the terminal.'; }
+    else { m.className = 'msg err'; m.textContent = j.message; }
+  } catch (e) { m.className = 'msg err'; m.textContent = 'Could not reach hoopstats. Is the terminal command still running?'; }
+};
+state.cur = nextFree(0);
+draw();
+</script>
+</body>
+</html>

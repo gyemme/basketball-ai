@@ -1,0 +1,25 @@
+# Game videos and other media: never commit these
+videos/
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.m4v
+*.mkv
+*.avi
+
+# Analysis output (contains frames, player thumbnails and stats from your games)
+runs/*
+!runs/sample/
+
+# Python / tooling
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.DS_Store
+
+# Downloaded model weights
+*.pt
+*.onnx

@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Report</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --panel-2:#f1efea; --ink:#1d1f23; --ink-2:#5b6068; --ink-3:#8b9097;
+  --line:#e2dfd8; --court:#fbf8f1; --court-line:#b9b2a4; --court-paint:#f1ebdf;
+  --make:#1f8f5f; --miss:#c4462d; --accent:#2f5bd3; --strength:#1f8f5f; --focus:#b5651d;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.05);
+  --sample-bg:#fff3cd; --sample-ink:#7a5b00;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --panel:#1b1e23; --panel-2:#22262c; --ink:#eceef1; --ink-2:#a9afb8; --ink-3:#757c86;
+    --line:#2d3239; --court:#1f2227; --court-line:#5a5f68; --court-paint:#262a30;
+    --make:#3fbf86; --miss:#ef6a4f; --accent:#7b9cff; --strength:#3fbf86; --focus:#e0974e;
+    --shadow:0 1px 2px rgba(0,0,0,.4); --sample-bg:#3a3000; --sample-ink:#ffd66b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --panel:#1b1e23; --panel-2:#22262c; --ink:#eceef1; --ink-2:#a9afb8; --ink-3:#757c86;
+  --line:#2d3239; --court:#1f2227; --court-line:#5a5f68; --court-paint:#262a30;
+  --make:#3fbf86; --miss:#ef6a4f; --accent:#7b9cff; --strength:#3fbf86; --focus:#e0974e;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --sample-bg:#3a3000; --sample-ink:#ffd66b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;margin:0 auto;padding:16px}
+.num{font-variant-numeric:tabular-nums}
+button,select{font:inherit;color:inherit}
+.sample{background:var(--sample-bg);color:var(--sample-ink);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-weight:600;font-size:13px}
+
+/* header */
+header.game{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 20px;box-shadow:var(--shadow)}
+.team-score{display:flex;align-items:center;gap:12px}
+.team-score.right{justify-content:flex-end;text-align:right}
+.team-score .chip{width:14px;height:14px;border-radius:4px;border:1px solid var(--ink-3);flex:none}
+.chip{box-shadow:0 0 0 1px var(--ink-3)}
+.team-score .tname{font-weight:650;font-size:17px}
+.team-score .pts{font-size:40px;font-weight:750;letter-spacing:-.02em}
+.team-score .det{font-size:12px;color:var(--ink-3)}
+.gmeta{text-align:center;color:var(--ink-2);font-size:12.5px}
+.gmeta b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.srcchip{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid var(--line);border-radius:99px;font-size:11.5px;color:var(--ink-2)}
+
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:2px}
+.seg button{border:0;background:transparent;padding:5px 10px;border-radius:8px;cursor:pointer;color:var(--ink-2);font-size:13px}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.filters select{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:13px}
+.filters .lbl{font-size:12px;color:var(--ink-3);margin-right:-2px}
+.spacer{flex:1}
+
+/* main grid */
+.main{display:grid;grid-template-columns:250px 1fr;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 10px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
+.roster{padding:12px;align-self:start}
+.main>*{min-width:0}
+.roster .allrow{display:flex;gap:6px;margin-bottom:10px}
+.roster .allrow button{flex:1;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:5px;cursor:pointer;font-size:12.5px}
+.tgroup{margin-bottom:12px}
+.tgroup .th{display:flex;align-items:center;gap:8px;font-weight:650;font-size:13px;margin:6px 4px}
+.tgroup .th .chip{width:10px;height:10px;border-radius:3px}
+.prow{display:grid;grid-template-columns:18px 34px 1fr auto;align-items:center;gap:6px;padding:6px 6px;border-radius:9px;cursor:pointer;user-select:none}
+.prow:hover{background:var(--panel-2)}
+.prow.on{background:var(--panel-2);outline:2px solid var(--pc,var(--accent));outline-offset:-2px}
+.prow .dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--line)}
+.prow.on .dot{background:var(--pc);border-color:var(--pc)}
+.prow .jn{font-weight:700;color:var(--ink-2)}
+.prow .pn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pl{font-size:12px;color:var(--ink-3)}
+.courtcard{padding:12px 14px;position:relative}
+.courtcard .ctitle{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.courtcard .ctitle h3{margin:0}
+.courtcard .ctitle .sum{color:var(--ink-2);font-size:13px}
+svg.court{width:100%;height:auto;display:block;touch-action:manipulation}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink-2);margin-top:8px;align-items:center}
+.legend .k{display:inline-flex;align-items:center;gap:6px}
+.dir{font-size:11.5px;color:var(--ink-3)}
+
+/* tooltip */
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:10px;font-size:12.5px;line-height:1.4;max-width:240px;opacity:0;transition:opacity .08s;z-index:5}
+.tip.show{opacity:1}
+.tip b{font-size:13px}
+.pin{position:absolute;right:14px;top:44px;width:250px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.15);padding:12px;display:none;z-index:6}
+.pin.show{display:block}
+.pin .x{position:absolute;right:8px;top:6px;border:0;background:transparent;cursor:pointer;font-size:18px;color:var(--ink-3)}
+.pin dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0;font-size:12.5px}
+.pin dt{color:var(--ink-3)}
+.pin dd{margin:0}
+.btn{display:inline-block;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:5px 10px;font-size:12.5px;cursor:pointer;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* detail panel */
+.detail{margin-top:14px;padding:16px 18px}
+.dhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.dhead .big{font-size:22px;font-weight:720}
+.dhead .sub{color:var(--ink-2)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-bottom:16px}
+.tile{background:var(--panel-2);border-radius:12px;padding:9px 11px}
+.tile .v{font-size:21px;font-weight:720}
+.tile .l{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.tile .s{font-size:11.5px;color:var(--ink-2)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.bars .row{display:grid;grid-template-columns:104px 1fr 96px;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+.bars .track{height:10px;background:var(--panel-2);border-radius:99px;overflow:hidden;position:relative}
+.bars .fill{height:100%;border-radius:99px}
+.bars .val{text-align:right;color:var(--ink-2);font-size:12.5px}
+.areas{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:4px}
+.areas .a{border-radius:9px;padding:8px 4px;text-align:center;background:var(--panel-2)}
+.areas .a .p{font-weight:700;font-size:15px}
+.areas .a .n{font-size:11px;color:var(--ink-2)}
+.areas .a .t{font-size:10.5px;color:var(--ink-3)}
+.mv{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px}
+.mv div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:4px 0}
+.mv span:first-child{color:var(--ink-2)}
+.ins{list-style:none;margin:0;padding:0}
+.ins li{padding:9px 11px;border-radius:10px;background:var(--panel-2);margin-bottom:7px;border-left:4px solid var(--focus)}
+.ins li.strength{border-left-color:var(--strength)}
+.ins .it{font-weight:650}
+.ins .tag{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-right:6px}
+.ins li.strength .tag{color:var(--strength)} .ins li.focus .tag{color:var(--focus)}
+.ins .id{color:var(--ink-2);font-size:13px}
+.ins .dr{font-size:12.5px;margin-top:3px}
+.ins .dr::before{content:"Drill · ";color:var(--ink-3)}
+.est{font-size:11.5px;color:var(--ink-3);margin-top:10px}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;font-weight:650;cursor:pointer;user-select:none}
+th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--panel-2)}
+tbody tr.on{background:var(--panel-2);box-shadow:inset 3px 0 0 var(--pc,var(--accent))}
+tfoot td{font-weight:700}
+.tablewrap{overflow-x:auto}
+.section{margin-top:14px;padding:16px 18px}
+.gallery{display:flex;flex-wrap:wrap;gap:10px}
+.gallery .g{width:112px;font-size:12px;color:var(--ink-2)}
+.gallery img{width:112px;height:150px;object-fit:cover;border-radius:10px;background:var(--panel-2);display:block;margin-bottom:4px}
+code{background:var(--panel-2);padding:1px 5px;border-radius:5px;font-size:12px}
+.qual{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13px;color:var(--ink-2);margin-bottom:12px}
+.qual b{color:var(--ink)}
+footer{color:var(--ink-3);font-size:12px;text-align:center;padding:22px 0 8px}
+.theme{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:5px 10px;cursor:pointer;font-size:12.5px;color:var(--ink-2)}
+
+@media (max-width:860px){
+  .main{grid-template-columns:1fr}
+  .roster{max-height:none;display:block}
+  .tgroup .plist{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+  .prow{grid-template-columns:14px auto auto;flex:none;border:1px solid var(--line)}
+  .prow .pl{display:none}
+  header.game{grid-template-columns:1fr 1fr;}
+  .gmeta{grid-column:1/-1;order:3}
+  .team-score .pts{font-size:30px}
+  .pin{position:fixed;left:16px;right:16px;bottom:16px;top:auto;width:auto}
+  .bars .row{grid-template-columns:90px 1fr 66px}
+  .wrap{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="sample" class="sample" hidden></div>
+  <header class="game" id="hdr"></header>
+
+  <div class="filters" id="filters">
+    <span class="lbl">Team</span><div class="seg" id="f-team"></div>
+    <span class="lbl">Period</span><div class="seg" id="f-period"></div>
+    <span class="lbl">Result</span><div class="seg" id="f-result">
+      <button data-v="all" class="on">All</button><button data-v="made">Makes</button><button data-v="miss">Misses</button></div>
+    <select id="f-zone" aria-label="Zone"><option value="all">All zones</option><option value="rim">At rim</option><option value="paint">Paint</option><option value="mid">Mid-range</option><option value="three">Three</option></select>
+    <select id="f-value" aria-label="Shot type"><option value="all">2PT + 3PT + FT</option><option value="2">2PT</option><option value="3">3PT</option><option value="1">Free throws</option></select>
+    <span class="spacer"></span>
+    <button class="theme" id="theme" title="Toggle light/dark">Light / dark</button>
+  </div>
+
+  <div class="main">
+    <aside class="card roster" id="roster">
+      <h3>Players</h3>
+      <div class="allrow"><button id="sel-all">All players</button><button id="sel-none">Clear</button></div>
+      <div id="groups"></div>
+    </aside>
+
+    <section class="card courtcard" id="courtcard">
+      <div class="ctitle"><h3>Full-court shot chart</h3><span class="sum num" id="sum"></span></div>
+      <svg class="court" id="court" role="img" aria-label="Full court shot chart"></svg>
+      <div class="legend" id="legend"></div>
+      <div class="tip" id="tip"></div>
+      <div class="pin" id="pin"></div>
+    </section>
+  </div>
+
+  <section class="card detail" id="detail"></section>
+
+  <section class="card section">
+    <h3>Box score</h3>
+    <div id="box"></div>
+    <div class="est">PTS, FG and FT come from detected shots. AST, rebounds and turnovers are estimated from ball possession. MIN = minutes the player was tracked on camera.</div>
+  </section>
+
+  <section class="card section" id="qualsec">
+    <h3>Data quality &amp; fixes</h3>
+    <div class="qual" id="qual"></div>
+    <div id="unk"></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script type="application/json" id="game-data">{"meta":{"sample":true,"title":"BSB silver vs east bay elite","date":"Oct 17, 2026","venue":"","period_label":"H","direction_note":"1st half: BSB silver attacks the right basket","source":{"device":"XbotGo Falcon","resolution":"3840\u00d72160","fps":30,"duration_s":2242.0,"file":"18:00:21.MP4"},"video_url":"../../videos/18%3A00%3A21.MP4","generated":"2026-10-18 21:07"},"court":{"length":84.0,"width":50.0,"hoop_offset":5.25,"three_pt":19.75,"corner_three":null,"lane_width":12.0,"ft_line":19.0,"rim_radius_ft":6.0},"teams":[{"id":"A","name":"BSB silver","color":"#8ccfee","mark":"#2a8fc9"},{"id":"B","name":"east bay elite","color":"#1f2a44","mark":"#d0582f"}],"players":[{"id":"A3","team":"A","number":"3","name":"Aarav"},{"id":"A5","team":"A","number":"5","name":"Ben"},{"id":"A10","team":"A","number":"10","name":"Caleb"},{"id":"A11","team":"A","number":"11","name":"Dev"},{"id":"A14","team":"A","number":"14","name":"Ethan"},{"id":"A22","team":"A","number":"22","name":"Felix"},{"id":"A23","team":"A","number":"23","name":"Gabe"},{"id":"A31","team":"A","number":"31","name":"Hari"},{"id":"B1","team":"B","number":"1","name":"Ian"},{"id":"B2","team":"B","number":"2","name":"Jalen"},{"id":"B4","team":"B","number":"4","name":"Kai"},{"id":"B7","team":"B","number":"7","name":"Leo"},{"id":"B12","team":"B","number":"12","name":"Marcus"},{"id":"B15","team":"B","number":"15","name":"Nate"},{"id":"B20","team":"B","number":"20","name":"Omar"},{"id":"B24","team":"B","number":"24","name":"Rohan"}],"shots":[{"id":2,"t":49.0,"player":"B7","team":"B","x":7.3,"y":22.8,"made":true,"free_throw":false,"kind":"catch","assist":"B1","hoop":0,"loc_ok":true,"period":1,"dist_ft":3.0,"zone":"rim","area":"left_wing","value":2},{"id":3,"t":73.8,"player":"A11","team":"A","x":69.4,"y":25.0,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":9.3,"zone":"paint","area":"middle","value":2},{"id":4,"t":93.5,"player":"A11","team":"A","x":65.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":1,"period":1,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":5,"t":101.5,"player":"A11","team":"A","x":65.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":1,"period":1,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":6,"t":121.3,"player":"A14","team":"A","x":68.2,"y":25.0,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":10.5,"zone":"paint","area":"middle","value":2},{"id":7,"t":134.8,"player":"B1","team":"B","x":10.1,"y":24.2,"made":true,"free_throw":false,"kind":"catch","assist":"B12","hoop":0,"loc_ok":true,"period":1,"dist_ft":4.9,"zone":"rim","area":"middle","value":2},{"id":8,"t":161.3,"player":"A10","team":"A","x":69.5,"y":37.9,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":15.9,"zone":"mid","area":"left_wing","value":2},{"id":9,"t":180.0,"player":"B1","team":"B","x":11.7,"y":44.8,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":20.8,"zone":"three","area":"right_corner","value":3},{"id":10,"t":197.7,"player":"A3","team":"A","x":76.8,"y":20.3,"made":true,"free_throw":false,"kind":"catch","assist":"A14","hoop":1,"loc_ok":true,"period":1,"dist_ft":5.1,"zone":"rim","area":"right_wing","value":2},{"id":11,"t":218.2,"player":"B7","team":"B","x":16.5,"y":20.4,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":12.2,"zone":"paint","area":"middle","value":2},{"id":12,"t":233.6,"player":"A3","team":"A","x":73.3,"y":2.5,"made":true,"free_throw":false,"kind":"catch","assist":"A10","hoop":1,"loc_ok":true,"period":1,"dist_ft":23.2,"zone":"three","area":"right_corner","value":3},{"id":13,"t":278.2,"player":"A10","team":"A","x":72.9,"y":47.7,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":23.4,"zone":"three","area":"left_corner","value":3},{"id":14,"t":328.2,"player":"B1","team":"B","x":7.1,"y":19.9,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":false,"period":1,"dist_ft":5.4,"zone":"rim","area":"left_corner","value":2},{"id":15,"t":345.1,"player":"A10","team":"A","x":72.4,"y":26.7,"made":true,"free_throw":false,"kind":"catch","assist":"A11","hoop":1,"loc_ok":false,"period":1,"dist_ft":6.6,"zone":"paint","area":"middle","value":2},{"id":16,"t":369.2,"player":"B1","team":"B","x":19.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":1,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":17,"t":377.2,"player":"B1","team":"B","x":19.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":1,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":18,"t":384.5,"player":"A23","team":"A","x":58.3,"y":26.2,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":20.5,"zone":"three","area":"middle","value":3},{"id":19,"t":402.9,"player":"B1","team":"B","x":5.3,"y":23.3,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":1.7,"zone":"rim","area":"left_corner","value":2},{"id":20,"t":418.7,"player":"A11","team":"A","x":76.9,"y":25.3,"made":true,"free_throw":false,"kind":"catch","assist":"A10","hoop":1,"loc_ok":true,"period":1,"dist_ft":1.9,"zone":"rim","area":"middle","value":2},{"id":21,"t":433.7,"player":"B7","team":"B","x":15.9,"y":21.9,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":11.1,"zone":"paint","area":"middle","value":2},{"id":22,"t":453.4,"player":"A14","team":"A","x":77.7,"y":24.5,"made":true,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":1.2,"zone":"rim","area":"right_wing","value":2},{"id":23,"t":475.1,"player":"B20","team":"B","x":26.2,"y":24.5,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":21.0,"zone":"three","area":"middle","value":3},{"id":24,"t":494.5,"player":"A10","team":"A","x":64.1,"y":24.9,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":14.7,"zone":"mid","area":"middle","value":2},{"id":25,"t":519.8,"player":"B24","team":"B","x":10.8,"y":19.0,"made":true,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":8.2,"zone":"paint","area":"left_wing","value":2},{"id":26,"t":542.5,"player":"A10","team":"A","x":78.1,"y":7.0,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":18.0,"zone":"mid","area":"right_corner","value":2},{"id":27,"t":554.9,"player":"B1","team":"B","x":12.8,"y":34.5,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":12.1,"zone":"mid","area":"right_wing","value":2},{"id":28,"t":590.9,"player":"B1","team":"B","x":25.7,"y":26.2,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":20.5,"zone":"three","area":"middle","value":3},{"id":29,"t":610.3,"player":"A10","team":"A","x":68.1,"y":4.8,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":22.8,"zone":"three","area":"right_wing","value":3},{"id":30,"t":631.0,"player":"B2","team":"B","x":22.4,"y":17.7,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":18.6,"zone":"mid","area":"middle","value":2},{"id":31,"t":654.1,"player":"B20","team":"B","x":6.6,"y":10.6,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":14.5,"zone":"mid","area":"left_corner","value":2},{"id":32,"t":673.4,"player":"B2","team":"B","x":18.0,"y":18.5,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":14.3,"zone":"mid","area":"left_wing","value":2},{"id":34,"t":715.8,"player":"A3","team":"A","x":65.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":1,"period":1,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":35,"t":723.8,"player":"A3","team":"A","x":65.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":1,"period":1,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":36,"t":737.8,"player":"B4","team":"B","x":8.8,"y":23.1,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":4.0,"zone":"rim","area":"left_wing","value":2},{"id":37,"t":749.4,"player":"A14","team":"A","x":74.8,"y":23.6,"made":true,"free_throw":false,"kind":"catch","assist":"A3","hoop":1,"loc_ok":true,"period":1,"dist_ft":4.2,"zone":"rim","area":"middle","value":2},{"id":38,"t":765.5,"player":"B1","team":"B","x":5.7,"y":36.6,"made":true,"free_throw":false,"kind":"catch","assist":"B4","hoop":0,"loc_ok":true,"period":1,"dist_ft":11.6,"zone":"mid","area":"right_corner","value":2},{"id":39,"t":790.7,"player":"A14","team":"A","x":63.6,"y":34.9,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":18.1,"zone":"mid","area":"left_wing","value":2},{"id":40,"t":805.2,"player":"B1","team":"B","x":12.3,"y":17.0,"made":true,"free_throw":false,"kind":"catch","assist":"B2","hoop":0,"loc_ok":true,"period":1,"dist_ft":10.7,"zone":"mid","area":"left_wing","value":2},{"id":41,"t":831.8,"player":"A3","team":"A","x":71.9,"y":12.1,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":14.6,"zone":"mid","area":"right_wing","value":2},{"id":42,"t":867.8,"player":"B1","team":"B","x":14.2,"y":40.9,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":18.2,"zone":"mid","area":"right_wing","value":2},{"id":43,"t":902.5,"player":"B24","team":"B","x":8.2,"y":26.6,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":3.4,"zone":"rim","area":"right_wing","value":2},{"id":44,"t":925.0,"player":"B4","team":"B","x":21.5,"y":10.8,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":21.6,"zone":"three","area":"left_wing","value":3},{"id":45,"t":944.4,"player":"A10","team":"A","x":55.9,"y":27.5,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":false,"period":1,"dist_ft":23.0,"zone":"three","area":"middle","value":3},{"id":46,"t":965.5,"player":"B1","team":"B","x":6.6,"y":22.5,"made":true,"free_throw":false,"kind":"catch","assist":"B4","hoop":0,"loc_ok":true,"period":1,"dist_ft":2.8,"zone":"rim","area":"left_wing","value":2},{"id":47,"t":1010.3,"player":"B2","team":"B","x":10.3,"y":29.8,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":false,"period":1,"dist_ft":7.0,"zone":"paint","area":"right_wing","value":2},{"id":48,"t":1031.6,"player":"B20","team":"B","x":6.0,"y":45.6,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":false,"period":1,"dist_ft":20.6,"zone":"three","area":"right_corner","value":3},{"id":49,"t":1054.8,"player":"B2","team":"B","x":9.1,"y":19.0,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":7.1,"zone":"paint","area":"left_wing","value":2},{"id":50,"t":1069.4,"player":"A22","team":"A","x":77.9,"y":48.3,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":23.3,"zone":"three","area":"left_corner","value":3},{"id":51,"t":1086.9,"player":"B1","team":"B","x":8.8,"y":24.4,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":1,"dist_ft":3.6,"zone":"rim","area":"middle","value":2},{"id":52,"t":1110.5,"player":"A23","team":"A","x":78.6,"y":29.7,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":1,"dist_ft":4.7,"zone":"rim","area":"left_corner","value":2},{"id":53,"t":1122.0,"player":"B1","team":"B","x":75.9,"y":27.0,"made":true,"free_throw":false,"kind":"catch","assist":"B15","hoop":1,"loc_ok":true,"period":2,"dist_ft":3.5,"zone":"rim","area":"left_wing","value":2},{"id":54,"t":1137.8,"player":"A23","team":"A","x":22.0,"y":18.2,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":18.1,"zone":"mid","area":"middle","value":2},{"id":55,"t":1163.5,"player":"B2","team":"B","x":74.1,"y":23.4,"made":true,"free_throw":false,"kind":"catch","assist":"B12","hoop":1,"loc_ok":true,"period":2,"dist_ft":4.9,"zone":"rim","area":"middle","value":2},{"id":56,"t":1186.9,"player":"A3","team":"A","x":14.6,"y":27.6,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":9.7,"zone":"paint","area":"middle","value":2},{"id":57,"t":1207.0,"player":"B1","team":"B","x":72.0,"y":27.9,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":7.3,"zone":"paint","area":"middle","value":2},{"id":58,"t":1225.9,"player":"A3","team":"A","x":11.1,"y":30.4,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":8.0,"zone":"paint","area":"right_wing","value":2},{"id":59,"t":1246.9,"player":"B12","team":"B","x":77.4,"y":29.2,"made":true,"free_throw":false,"kind":"catch","assist":"B1","hoop":1,"loc_ok":true,"period":2,"dist_ft":4.4,"zone":"rim","area":"left_corner","value":2},{"id":60,"t":1260.8,"player":"A10","team":"A","x":10.1,"y":44.5,"made":true,"free_throw":false,"kind":"catch","assist":"A3","hoop":0,"loc_ok":true,"period":2,"dist_ft":20.1,"zone":"three","area":"right_corner","value":3},{"id":61,"t":1278.3,"player":"B2","team":"B","x":58.2,"y":33.2,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":22.1,"zone":"three","area":"middle","value":3},{"id":62,"t":1294.4,"player":"A3","team":"A","x":7.5,"y":23.9,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":2.5,"zone":"rim","area":"left_wing","value":2},{"id":63,"t":1322.9,"player":"A10","team":"A","x":11.7,"y":34.2,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":11.2,"zone":"mid","area":"right_wing","value":2},{"id":64,"t":1343.5,"player":"A23","team":"A","x":5.9,"y":41.7,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":16.7,"zone":"mid","area":"right_corner","value":2},{"id":65,"t":1357.7,"player":"B24","team":"B","x":60.9,"y":23.9,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":17.9,"zone":"mid","area":"middle","value":2},{"id":66,"t":1373.8,"player":"A14","team":"A","x":9.6,"y":24.1,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":4.4,"zone":"rim","area":"middle","value":2},{"id":67,"t":1391.5,"player":"B7","team":"B","x":73.6,"y":24.9,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":5.2,"zone":"rim","area":"middle","value":2},{"id":68,"t":1415.3,"player":"A14","team":"A","x":19.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":69,"t":1423.3,"player":"A14","team":"A","x":19.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":70,"t":1433.5,"player":"B1","team":"B","x":64.2,"y":22.5,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":14.8,"zone":"mid","area":"middle","value":2},{"id":71,"t":1450.9,"player":"A3","team":"A","x":5.4,"y":30.1,"made":true,"free_throw":false,"kind":"catch","assist":"A14","hoop":0,"loc_ok":true,"period":2,"dist_ft":5.1,"zone":"rim","area":"right_corner","value":2},{"id":72,"t":1463.8,"player":"B2","team":"B","x":74.1,"y":23.9,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":4.8,"zone":"rim","area":"middle","value":2},{"id":73,"t":1513.0,"player":"B2","team":"B","x":75.8,"y":22.0,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":4.2,"zone":"rim","area":"right_wing","value":2},{"id":74,"t":1529.1,"player":"A5","team":"A","x":13.9,"y":21.1,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":9.5,"zone":"paint","area":"middle","value":2},{"id":75,"t":1548.5,"player":"B4","team":"B","x":74.5,"y":10.5,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":15.1,"zone":"mid","area":"right_corner","value":2},{"id":76,"t":1565.4,"player":"B7","team":"B","x":75.2,"y":28.1,"made":true,"free_throw":false,"kind":"catch","assist":"B1","hoop":1,"loc_ok":true,"period":2,"dist_ft":4.7,"zone":"rim","area":"left_wing","value":2},{"id":77,"t":1592.2,"player":"B7","team":"B","x":74.3,"y":25.4,"made":true,"free_throw":false,"kind":"catch","assist":"B12","hoop":1,"loc_ok":true,"period":2,"dist_ft":4.5,"zone":"rim","area":"middle","value":2},{"id":78,"t":1603.8,"player":"A10","team":"A","x":5.6,"y":35.6,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":10.6,"zone":"mid","area":"right_corner","value":2},{"id":79,"t":1622.2,"player":"A3","team":"A","x":7.4,"y":25.6,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":2.2,"zone":"rim","area":"middle","value":2},{"id":80,"t":1635.3,"player":"B7","team":"B","x":78.4,"y":27.2,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":2.2,"zone":"rim","area":"left_corner","value":2},{"id":81,"t":1657.8,"player":"B7","team":"B","x":70.9,"y":32.7,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":11.0,"zone":"mid","area":"left_wing","value":2},{"id":82,"t":1679.4,"player":"A22","team":"A","x":19.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":83,"t":1687.4,"player":"A22","team":"A","x":19.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":84,"t":1698.8,"player":"B12","team":"B","x":76.5,"y":25.2,"made":true,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":2.3,"zone":"rim","area":"middle","value":2},{"id":85,"t":1722.5,"player":"A10","team":"A","x":19.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":86,"t":1730.5,"player":"A10","team":"A","x":19.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":87,"t":1767.4,"player":"A10","team":"A","x":7.8,"y":29.5,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":5.2,"zone":"rim","area":"right_wing","value":2},{"id":88,"t":1782.8,"player":"B4","team":"B","x":76.3,"y":25.0,"made":true,"free_throw":false,"kind":"catch","assist":"B7","hoop":1,"loc_ok":true,"period":2,"dist_ft":2.5,"zone":"rim","area":"middle","value":2},{"id":89,"t":1798.5,"player":"A3","team":"A","x":21.9,"y":23.4,"made":true,"free_throw":false,"kind":"catch","assist":"A10","hoop":0,"loc_ok":true,"period":2,"dist_ft":16.7,"zone":"mid","area":"middle","value":2},{"id":90,"t":1811.6,"player":"B2","team":"B","x":56.4,"y":33.1,"made":true,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":false,"period":2,"dist_ft":23.8,"zone":"three","area":"middle","value":3},{"id":91,"t":1836.2,"player":"A23","team":"A","x":26.0,"y":21.1,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":false,"period":2,"dist_ft":21.1,"zone":"three","area":"middle","value":3},{"id":92,"t":1858.7,"player":"B20","team":"B","x":65.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":1,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":93,"t":1866.7,"player":"B20","team":"B","x":65.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":1,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":94,"t":1879.7,"player":"A5","team":"A","x":7.8,"y":36.5,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":11.8,"zone":"mid","area":"right_corner","value":2},{"id":95,"t":1905.2,"player":"B2","team":"B","x":75.6,"y":24.1,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":3.3,"zone":"rim","area":"middle","value":2},{"id":96,"t":1941.7,"player":"B1","team":"B","x":77.5,"y":25.7,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":1.4,"zone":"rim","area":"left_wing","value":2},{"id":97,"t":1997.2,"player":"B7","team":"B","x":70.4,"y":5.5,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":21.2,"zone":"three","area":"right_wing","value":3},{"id":98,"t":2036.1,"player":"B7","team":"B","x":71.1,"y":27.8,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":8.1,"zone":"paint","area":"middle","value":2},{"id":99,"t":2069.7,"player":"B1","team":"B","x":67.0,"y":36.3,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":16.3,"zone":"mid","area":"left_wing","value":2},{"id":100,"t":2086.3,"player":"A3","team":"A","x":5.8,"y":41.0,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":0,"loc_ok":false,"period":2,"dist_ft":16.0,"zone":"mid","area":"right_corner","value":2},{"id":101,"t":2105.5,"player":"B12","team":"B","x":76.1,"y":25.8,"made":true,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":2.8,"zone":"rim","area":"middle","value":2},{"id":102,"t":2120.2,"player":"A3","team":"A","x":19.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":103,"t":2128.2,"player":"A3","team":"A","x":19.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":104,"t":2134.4,"player":"B7","team":"B","x":70.2,"y":22.7,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":8.9,"zone":"paint","area":"middle","value":2},{"id":105,"t":2150.6,"player":"B2","team":"B","x":75.4,"y":25.7,"made":true,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":3.4,"zone":"rim","area":"middle","value":2},{"id":106,"t":2173.6,"player":"A23","team":"A","x":19.0,"y":25.0,"made":true,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":107,"t":2181.6,"player":"A23","team":"A","x":19.0,"y":25.0,"made":false,"free_throw":true,"kind":null,"assist":null,"hoop":0,"period":2,"dist_ft":13.8,"zone":"ft","area":"middle","value":1},{"id":108,"t":2198.6,"player":"B24","team":"B","x":78.2,"y":8.4,"made":false,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":16.6,"zone":"mid","area":"right_corner","value":2},{"id":109,"t":2217.4,"player":"B1","team":"B","x":57.2,"y":30.9,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":22.3,"zone":"three","area":"middle","value":3},{"id":110,"t":2229.7,"player":"B12","team":"B","x":78.6,"y":20.0,"made":true,"free_throw":false,"kind":"dribble","assist":null,"hoop":1,"loc_ok":true,"period":2,"dist_ft":5.0,"zone":"rim","area":"right_corner","value":2},{"id":111,"t":2237.0,"player":"A3","team":"A","x":12.4,"y":21.8,"made":false,"free_throw":false,"kind":"catch","assist":null,"hoop":0,"loc_ok":true,"period":2,"dist_ft":7.8,"zone":"paint","area":"middle","value":2}],"tracked_s":{"A3":1930,"A5":1776,"A10":1493,"A11":865,"A14":1249,"A22":479,"A23":1609,"A31":372,"B1":1139,"B2":1722,"B4":1341,"B7":1048,"B12":1376,"B15":1715,"B20":1313,"B24":254},"overlay":[{"t":36.1,"A":2,"B":0},{"t":57.6,"A":2,"B":2},{"t":100.9,"A":3,"B":2},{"t":110.0,"A":4,"B":2},{"t":138.5,"A":4,"B":4},{"t":206.0,"A":6,"B":4},{"t":226.7,"A":6,"B":6},{"t":238.1,"A":9,"B":6},{"t":354.0,"A":11,"B":6},{"t":421.9,"A":13,"B":6},{"t":460.1,"A":15,"B":6},{"t":501.6,"A":17,"B":6},{"t":523.7,"A":17,"B":8},{"t":697.0,"A":17,"B":10},{"t":723.4,"A":18,"B":10},{"t":732.5,"A":19,"B":10},{"t":742.8,"A":19,"B":12},{"t":755.2,"A":21,"B":12},{"t":774.0,"A":21,"B":14},{"t":797.8,"A":23,"B":14},{"t":810.7,"A":23,"B":16},{"t":933.5,"A":23,"B":19},{"t":969.2,"A":23,"B":21},{"t":1126.0,"A":23,"B":23},{"t":1171.0,"A":23,"B":25},{"t":1192.3,"A":25,"B":25},{"t":1233.4,"A":27,"B":25},{"t":1250.1,"A":27,"B":27},{"t":1265.3,"A":30,"B":27},{"t":1422.7,"A":31,"B":27},{"t":1427.8,"A":32,"B":27},{"t":1441.6,"A":32,"B":29},{"t":1457.9,"A":34,"B":29},{"t":1469.0,"A":34,"B":31},{"t":1538.1,"A":36,"B":31},{"t":1572.3,"A":36,"B":33},{"t":1600.7,"A":36,"B":35},{"t":1683.4,"A":37,"B":35},{"t":1705.3,"A":37,"B":37},{"t":1725.8,"A":38,"B":37},{"t":1773.3,"A":40,"B":37},{"t":1785.9,"A":40,"B":39},{"t":1803.4,"A":42,"B":39},{"t":1819.0,"A":42,"B":42},{"t":2041.4,"A":42,"B":44},{"t":2073.6,"A":42,"B":46},{"t":2093.9,"A":44,"B":46},{"t":2111.5,"A":44,"B":48},{"t":2129.1,"A":45,"B":48},{"t":2156.7,"A":45,"B":50},{"t":2180.4,"A":46,"B":50},{"t":2234.2,"A":46,"B":52}],"quality":{"registration_pct":91,"identified_pct":84},"unidentified":[{"track":"track_57","team":"A","seconds":212,"thumb":"data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20112%20150%27%3E%3Crect%20width%3D%27112%27%20height%3D%27150%27%20fill%3D%27%23d9d4c8%27/%3E%3Ccircle%20cx%3D%2756%27%20cy%3D%2734%27%20r%3D%2715%27%20fill%3D%27%238a6b55%27/%3E%3Crect%20x%3D%2730%27%20y%3D%2752%27%20width%3D%2752%27%20height%3D%2756%27%20rx%3D%2710%27%20fill%3D%27%238ccfee%27/%3E%3Crect%20x%3D%2736%27%20y%3D%27106%27%20width%3D%2716%27%20height%3D%2738%27%20fill%3D%27%23333%27/%3E%3Crect%20x%3D%2760%27%20y%3D%27106%27%20width%3D%2716%27%20height%3D%2738%27%20fill%3D%27%23333%27/%3E%3Ctext%20x%3D%2756%27%20y%3D%2786%27%20font-size%3D%2716%27%20font-family%3D%27sans-serif%27%20text-anchor%3D%27middle%27%20fill%3D%27%23fff%27%3E%3F%3C/text%3E%3C/svg%3E"},{"track":"track_88","team":"B","seconds":145,"thumb":"data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20112%20150%27%3E%3Crect%20width%3D%27112%27%20height%3D%27150%27%20fill%3D%27%23d9d4c8%27/%3E%3Ccircle%20cx%3D%2756%27%20cy%3D%2734%27%20r%3D%2715%27%20fill%3D%27%238a6b55%27/%3E%3Crect%20x%3D%2730%27%20y%3D%2752%27%20width%3D%2752%27%20height%3D%2756%27%20rx%3D%2710%27%20fill%3D%27%231f2a44%27/%3E%3Crect%20x%3D%2736%27%20y%3D%27106%27%20width%3D%2716%27%20height%3D%2738%27%20fill%3D%27%23333%27/%3E%3Crect%20x%3D%2760%27%20y%3D%27106%27%20width%3D%2716%27%20height%3D%2738%27%20fill%3D%27%23333%27/%3E%3Ctext%20x%3D%2756%27%20y%3D%2786%27%20font-size%3D%2716%27%20font-family%3D%27sans-serif%27%20text-anchor%3D%27middle%27%20fill%3D%27%23fff%27%3E1%3F%3C/text%3E%3C/svg%3E"},{"track":"track_131","team":"A","seconds":64,"thumb":"data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20112%20150%27%3E%3Crect%20width%3D%27112%27%20height%3D%27150%27%20fill%3D%27%23d9d4c8%27/%3E%3Ccircle%20cx%3D%2756%27%20cy%3D%2734%27%20r%3D%2715%27%20fill%3D%27%238a6b55%27/%3E%3Crect%20x%3D%2730%27%20y%3D%2752%27%20width%3D%2752%27%20height%3D%2756%27%20rx%3D%2710%27%20fill%3D%27%238ccfee%27/%3E%3Crect%20x%3D%2736%27%20y%3D%27106%27%20width%3D%2716%27%20height%3D%2738%27%20fill%3D%27%23333%27/%3E%3Crect%20x%3D%2760%27%20y%3D%27106%27%20width%3D%2716%27%20height%3D%2738%27%20fill%3D%27%23333%27/%3E%3Ctext%20x%3D%2756%27%20y%3D%2786%27%20font-size%3D%2716%27%20font-family%3D%27sans-serif%27%20text-anchor%3D%27middle%27%20fill%3D%27%23fff%27%3E2%3F%3C/text%3E%3C/svg%3E"}],"stats":{"players":{"A3":{"fga":11,"fgm":7,"fg_pct":63.6,"fg3a":1,"fg3m":1,"fg3_pct":100.0,"fg2a":10,"fg2m":6,"fg2_pct":60.0,"fta":4,"ftm":3,"ft_pct":75.0,"pts":18,"zones":{"rim":{"fga":4,"fgm":2,"pct":50.0,"share":36.4},"paint":{"fga":3,"fgm":2,"pct":66.7,"share":27.3},"mid":{"fga":3,"fgm":2,"pct":66.7,"share":27.3},"three":{"fga":1,"fgm":1,"pct":100.0,"share":9.1}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0},"left_wing":{"fga":1,"fgm":0,"pct":0.0,"share":9.1},"middle":{"fga":4,"fgm":2,"pct":50.0,"share":36.4},"right_wing":{"fga":3,"fgm":2,"pct":66.7,"share":27.3},"right_corner":{"fga":3,"fgm":3,"pct":100.0,"share":27.3}},"kinds":{"catch":{"fga":7,"fgm":4,"pct":57.1},"dribble":{"fga":4,"fgm":3,"pct":75.0}},"left_share":14.3,"right_share":85.7,"avg_dist_ft":9.5,"oreb":0,"dreb":3,"reb":3,"ast":2,"tov":2,"stl":0,"touches":40,"avg_touch_s":3.2,"tov_per_touch":5.0,"tracked_min":32.2,"dist_ft":9447,"dist_per_min":293.7,"avg_speed_mph":3.9,"top_speed_mph":14.2,"paint_pct":15.8,"spacing_ft":10.6,"open_ft":4.8,"pressure_ft":4.4,"heat":[[12,1,1.97],[13,0,0.41],[11,1,1.55],[10,1,0.98],[10,2,2.23],[9,3,1.81],[9,2,1.04],[9,4,1.3],[11,2,2.69],[7,4,0.83],[5,3,0.83],[4,3,1.14],[4,2,0.98],[3,3,2.18],[3,4,2.23],[3,5,3.01],[2,4,1.97],[2,3,2.23],[2,2,2.44],[6,3,0.52],[10,3,2.33],[10,5,2.02],[11,5,2.12],[12,6,1.81],[11,6,3.06],[11,3,2.23],[11,0,0.16],[12,0,0.73],[11,4,1.81],[10,4,1.97],[7,1,0.26],[5,1,0.26],[3,1,0.98],[2,1,2.33],[2,5,2.44],[8,2,0.67],[13,1,0.41],[9,1,0.41],[4,4,1.61],[3,6,1.55],[2,6,2.23],[1,6,1.71],[4,6,0.47],[6,6,0.36],[8,5,0.52],[9,5,0.73],[10,6,1.3],[12,7,1.09],[12,2,1.55],[8,0,0.1],[6,0,0.05],[5,2,0.83],[5,4,0.41],[6,4,0.67],[8,4,0.47],[12,5,1.92],[1,1,2.8],[1,3,0.93],[3,2,2.49],[1,5,1.09],[0,6,0.21],[12,3,1.35],[13,7,0.16],[8,6,0.36],[1,2,1.5],[4,5,0.98],[8,3,0.62],[7,3,0.62],[7,2,0.26],[1,4,0.52],[0,5,0.16],[5,6,0.47],[7,6,0.16],[9,6,0.26],[10,7,0.1],[11,7,0.47],[6,2,0.36],[4,1,0.41],[0,1,0.26],[9,0,0.05],[12,4,1.87],[13,3,0.16],[6,5,0.26],[1,7,1.14],[5,7,0.05],[8,7,0.05],[13,6,0.21],[13,4,0.26],[13,2,0.21],[5,5,0.26],[0,3,0.26],[0,2,0.16],[2,7,0.41],[7,5,0.36],[13,5,0.21],[0,7,0.47],[0,0,0.1],[1,0,0.62],[8,1,0.16],[3,7,0.16],[6,1,0.1],[2,0,0.05]],"insights":[{"kind":"strength","title":"Hot from at rim","detail":"2/4 (50%).","drill":null},{"kind":"focus","title":"Develop the left side","detail":"85.7% of side shots come from the right.","drill":"Left-hand dribble series and left-side layups."}]},"A5":{"fga":2,"fgm":1,"fg_pct":50.0,"fg3a":0,"fg3m":0,"fg3_pct":null,"fg2a":2,"fg2m":1,"fg2_pct":50.0,"fta":0,"ftm":0,"ft_pct":null,"pts":2,"zones":{"rim":{"fga":0,"fgm":0,"pct":null,"share":0.0},"paint":{"fga":1,"fgm":1,"pct":100.0,"share":50.0},"mid":{"fga":1,"fgm":0,"pct":0.0,"share":50.0},"three":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"middle":{"fga":1,"fgm":1,"pct":100.0,"share":50.0},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_corner":{"fga":1,"fgm":0,"pct":0.0,"share":50.0}},"kinds":{"catch":{"fga":0,"fgm":0,"pct":null},"dribble":{"fga":2,"fgm":1,"pct":50.0}},"left_share":0.0,"right_share":100.0,"avg_dist_ft":10.7,"oreb":1,"dreb":3,"reb":4,"ast":0,"tov":1,"stl":1,"touches":4,"avg_touch_s":3.2,"tov_per_touch":25.0,"tracked_min":29.6,"dist_ft":9057,"dist_per_min":306.0,"avg_speed_mph":3.9,"top_speed_mph":13.5,"paint_pct":13.2,"spacing_ft":10.5,"open_ft":4.4,"pressure_ft":4.6,"heat":[[8,3,0.62],[9,4,1.01],[9,5,0.79],[10,6,0.9],[12,6,1.58],[12,7,1.75],[11,6,1.69],[10,5,2.48],[11,7,0.17],[11,5,2.25],[12,3,0.84],[12,2,1.46],[11,1,3.1],[10,1,1.46],[10,4,2.53],[6,3,0.51],[2,5,3.1],[1,6,3.04],[1,4,1.18],[0,3,0.23],[1,2,2.48],[2,4,1.52],[2,3,1.86],[2,2,2.36],[4,3,0.96],[6,5,0.28],[9,3,1.69],[10,2,2.93],[10,3,4.11],[11,4,1.52],[12,1,2.25],[11,3,1.69],[12,5,1.13],[11,2,3.04],[12,4,0.45],[9,6,0.28],[5,5,0.9],[4,5,0.96],[3,6,1.41],[3,4,3.04],[3,2,1.75],[8,5,0.56],[8,4,0.68],[7,4,1.07],[2,6,2.08],[5,2,0.68],[9,1,0.45],[6,2,0.34],[4,1,0.56],[2,1,0.9],[1,1,2.31],[1,3,1.01],[5,6,0.17],[7,6,0.23],[8,6,0.39],[7,3,0.45],[4,4,2.31],[3,5,3.04],[3,3,3.27],[5,7,0.11],[4,6,0.17],[5,4,0.79],[0,6,0.39],[0,7,0.34],[6,6,0.17],[10,7,0.11],[13,3,0.06],[7,2,0.34],[9,2,0.51],[12,0,0.56],[8,1,0.28],[5,3,0.51],[3,1,0.73],[1,7,0.96],[4,7,0.11],[4,2,0.51],[7,1,0.28],[11,0,0.11],[6,4,0.62],[0,2,0.34],[0,1,0.39],[12,8,0.11],[8,2,0.06],[1,5,0.73],[7,5,0.34],[13,0,0.17],[0,5,0.11],[10,0,0.06],[13,1,0.23],[6,1,0.17],[1,0,0.45],[7,7,0.06],[3,7,0.11],[2,7,0.28],[2,0,0.17],[0,0,0.06],[1,8,0.11],[4,0,0.06],[3,0,0.06],[5,1,0.17],[13,6,0.17],[13,2,0.06],[13,5,0.06],[13,4,0.06]],"insights":[{"kind":"focus","title":"Be more aggressive","detail":"Only 2 shots in 29.6 tracked minutes.","drill":"Look for the shot first when open; attack closeouts."}]},"A10":{"fga":11,"fgm":4,"fg_pct":36.4,"fg3a":4,"fg3m":1,"fg3_pct":25.0,"fg2a":7,"fg2m":3,"fg2_pct":42.9,"fta":2,"ftm":1,"ft_pct":50.0,"pts":10,"zones":{"rim":{"fga":1,"fgm":1,"pct":100.0,"share":9.1},"paint":{"fga":1,"fgm":1,"pct":100.0,"share":9.1},"mid":{"fga":5,"fgm":1,"pct":20.0,"share":45.5},"three":{"fga":4,"fgm":1,"pct":25.0,"share":36.4}},"areas":{"left_corner":{"fga":1,"fgm":0,"pct":0.0,"share":9.1},"left_wing":{"fga":1,"fgm":0,"pct":0.0,"share":9.1},"middle":{"fga":3,"fgm":2,"pct":66.7,"share":27.3},"right_wing":{"fga":3,"fgm":1,"pct":33.3,"share":27.3},"right_corner":{"fga":3,"fgm":1,"pct":33.3,"share":27.3}},"kinds":{"catch":{"fga":6,"fgm":2,"pct":33.3},"dribble":{"fga":5,"fgm":2,"pct":40.0}},"left_share":25.0,"right_share":75.0,"avg_dist_ft":15.8,"oreb":0,"dreb":3,"reb":3,"ast":3,"tov":2,"stl":1,"touches":45,"avg_touch_s":3.5,"tov_per_touch":4.4,"tracked_min":24.9,"dist_ft":7509,"dist_per_min":301.8,"avg_speed_mph":3.9,"top_speed_mph":14.6,"paint_pct":16.9,"spacing_ft":10.6,"open_ft":4.8,"pressure_ft":4.6,"heat":[[8,3,0.94],[9,3,0.94],[9,4,1.14],[8,4,0.47],[9,5,0.94],[10,6,2.81],[10,5,2.95],[10,4,2.41],[11,3,1.94],[11,2,1.88],[11,1,1.47],[10,2,1.21],[10,3,2.48],[7,2,0.6],[6,2,0.33],[2,1,2.08],[1,1,1.41],[1,2,1.54],[1,4,1.14],[2,4,1.61],[2,5,2.34],[3,4,2.61],[6,5,0.47],[8,6,0.13],[9,7,0.13],[9,6,0.67],[10,7,0.13],[11,4,2.34],[12,3,1.81],[12,2,2.61],[12,1,1.14],[12,0,0.4],[11,6,2.61],[12,6,1.47],[8,7,0.27],[5,7,0.07],[5,6,0.54],[4,5,0.6],[2,2,2.68],[2,3,2.75],[1,3,1.21],[5,2,0.6],[8,2,0.67],[9,1,0.27],[7,4,0.33],[5,5,0.4],[5,3,0.74],[12,7,1.54],[11,7,0.67],[4,6,0.4],[3,6,1.54],[2,7,0.67],[2,6,2.48],[1,6,2.88],[3,3,2.48],[6,4,0.8],[8,5,0.74],[5,4,1.21],[3,5,2.01],[7,7,0.07],[6,6,0.2],[4,4,1.21],[1,5,1.14],[5,1,0.27],[7,1,0.07],[9,2,0.47],[11,5,2.21],[12,8,0.07],[7,3,0.2],[4,3,1.67],[3,2,2.68],[12,5,1.94],[13,6,0.33],[6,3,0.47],[0,2,0.27],[10,1,0.2],[13,0,0.07],[0,7,0.13],[6,7,0.07],[4,2,0.54],[7,5,0.33],[11,0,0.13],[3,1,1.54],[7,6,0.13],[0,1,0.33],[0,4,0.07],[0,5,0.13],[12,4,1.94],[1,7,1.21],[0,3,0.13],[0,6,0.07],[2,0,0.07],[13,3,0.13],[13,2,0.33],[6,1,0.07],[4,0,0.07],[8,1,0.13],[1,0,0.47],[13,5,0.47],[13,1,0.07],[13,4,0.13],[4,1,0.07]],"insights":[{"kind":"focus","title":"Develop the left side","detail":"75% of side shots come from the right.","drill":"Left-hand dribble series and left-side layups."},{"kind":"focus","title":"Quicker decisions","detail":"Holds the ball 3.5 s per touch (team avg 2.7 s).","drill":"0.5-second rule in practice: catch \u2192 shoot, pass or drive."},{"kind":"strength","title":"Playmaker","detail":"3 assists (estimated).","drill":null}]},"A11":{"fga":2,"fgm":1,"fg_pct":50.0,"fg3a":0,"fg3m":0,"fg3_pct":null,"fg2a":2,"fg2m":1,"fg2_pct":50.0,"fta":2,"ftm":2,"ft_pct":100.0,"pts":4,"zones":{"rim":{"fga":1,"fgm":1,"pct":100.0,"share":50.0},"paint":{"fga":1,"fgm":0,"pct":0.0,"share":50.0},"mid":{"fga":0,"fgm":0,"pct":null,"share":0.0},"three":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"middle":{"fga":2,"fgm":1,"pct":50.0,"share":100.0},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"kinds":{"catch":{"fga":1,"fgm":1,"pct":100.0},"dribble":{"fga":1,"fgm":0,"pct":0.0}},"left_share":null,"right_share":null,"avg_dist_ft":5.6,"oreb":2,"dreb":3,"reb":5,"ast":1,"tov":0,"stl":2,"touches":12,"avg_touch_s":2.3,"tov_per_touch":0.0,"tracked_min":14.4,"dist_ft":3971,"dist_per_min":275.5,"avg_speed_mph":3.6,"top_speed_mph":15.3,"paint_pct":35.7,"spacing_ft":9.3,"open_ft":3.7,"pressure_ft":4.1,"heat":[[8,1,0.12],[9,2,0.92],[10,2,1.97],[11,2,1.39],[12,1,1.39],[12,0,0.35],[12,2,2.54],[12,3,4.51],[12,4,4.16],[12,5,4.05],[11,4,3.24],[8,4,1.04],[5,5,0.81],[4,5,0.58],[3,5,1.27],[2,6,0.69],[1,6,2.43],[1,5,3.58],[2,5,2.08],[3,4,1.85],[2,3,2.31],[2,2,2.43],[1,1,1.5],[1,3,5.2],[0,4,0.35],[7,5,0.23],[9,4,1.5],[10,3,2.43],[11,3,2.89],[12,6,1.62],[12,7,0.58],[10,4,4.05],[9,3,1.16],[6,5,0.69],[4,3,0.46],[3,3,1.85],[2,4,3.7],[7,6,0.35],[8,6,0.46],[9,5,0.46],[9,6,0.35],[5,4,1.73],[4,4,0.92],[6,3,0.35],[8,3,0.58],[10,1,0.23],[11,1,0.69],[7,3,0.69],[5,3,0.81],[4,2,0.35],[3,2,1.16],[3,1,0.12],[1,4,5.32],[7,4,0.69],[0,5,0.23],[0,6,0.69],[4,6,0.35],[9,7,0.12],[10,7,0.12],[11,7,0.12],[11,6,1.16],[0,3,0.35],[8,5,0.58],[11,5,3.58],[13,3,0.12],[13,2,0.12],[6,2,0.23],[10,5,0.81],[5,2,0.12],[2,1,0.23],[1,2,1.85],[0,1,0.12],[6,4,0.35],[3,6,0.35],[10,6,0.35],[6,6,0.12],[5,6,0.12],[1,7,0.23],[0,7,0.12],[8,2,0.23],[13,4,0.12]],"insights":[{"kind":"focus","title":"Be more aggressive","detail":"Only 2 shots in 14.4 tracked minutes.","drill":"Look for the shot first when open; attack closeouts."}]},"A14":{"fga":5,"fgm":3,"fg_pct":60.0,"fg3a":0,"fg3m":0,"fg3_pct":null,"fg2a":5,"fg2m":3,"fg2_pct":60.0,"fta":2,"ftm":2,"ft_pct":100.0,"pts":8,"zones":{"rim":{"fga":3,"fgm":2,"pct":66.7,"share":60.0},"paint":{"fga":1,"fgm":0,"pct":0.0,"share":20.0},"mid":{"fga":1,"fgm":1,"pct":100.0,"share":20.0},"three":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0},"left_wing":{"fga":1,"fgm":1,"pct":100.0,"share":20.0},"middle":{"fga":3,"fgm":1,"pct":33.3,"share":60.0},"right_wing":{"fga":1,"fgm":1,"pct":100.0,"share":20.0},"right_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"kinds":{"catch":{"fga":3,"fgm":2,"pct":66.7},"dribble":{"fga":2,"fgm":1,"pct":50.0}},"left_share":50.0,"right_share":50.0,"avg_dist_ft":7.7,"oreb":1,"dreb":1,"reb":2,"ast":2,"tov":1,"stl":0,"touches":25,"avg_touch_s":2.3,"tov_per_touch":4.0,"tracked_min":20.8,"dist_ft":6071,"dist_per_min":291.7,"avg_speed_mph":3.8,"top_speed_mph":13.7,"paint_pct":15.5,"spacing_ft":10.2,"open_ft":4.8,"pressure_ft":4.6,"heat":[[3,5,1.84],[2,4,2.4],[2,3,2.96],[2,2,3.68],[1,4,1.12],[1,5,1.44],[1,3,1.68],[4,2,1.44],[6,2,0.72],[7,2,0.32],[9,2,0.72],[10,1,0.48],[10,3,3.28],[10,4,3.04],[10,5,1.52],[7,4,0.96],[5,5,0.56],[4,3,0.96],[3,2,2.16],[2,1,2.72],[1,6,1.44],[1,2,1.04],[7,5,0.16],[10,6,1.2],[11,7,0.32],[12,7,1.12],[11,4,1.92],[11,3,1.52],[12,1,2.4],[11,1,1.92],[7,3,1.12],[5,4,0.96],[4,4,4.08],[0,6,0.24],[5,1,0.08],[7,1,0.08],[9,3,1.12],[11,6,3.36],[12,4,0.4],[12,3,0.72],[12,2,1.44],[12,5,0.96],[13,6,0.48],[12,6,2.8],[13,7,0.08],[9,5,0.48],[6,4,0.72],[3,4,2.0],[3,1,0.96],[8,2,0.4],[11,5,3.92],[8,3,1.04],[5,3,1.36],[1,1,2.24],[3,3,2.8],[2,5,1.6],[4,5,0.96],[8,4,0.72],[9,4,1.84],[11,2,2.48],[0,1,0.4],[4,1,0.24],[8,7,0.08],[6,6,0.32],[4,6,0.24],[3,6,1.68],[2,6,0.64],[8,6,0.32],[10,2,1.52],[6,5,0.48],[6,3,0.32],[13,2,0.08],[12,0,0.4],[13,3,0.16],[13,4,0.08],[13,5,0.48],[0,3,0.32],[5,2,0.4],[11,0,0.08],[0,2,0.16],[0,4,0.16],[0,5,0.08],[8,5,0.4],[9,6,0.32],[5,6,0.16],[1,0,0.64],[6,1,0.16],[9,1,0.08],[7,6,0.16],[2,7,0.08],[1,7,0.32],[13,1,0.32],[0,7,0.16]],"insights":[]},"A22":{"fga":1,"fgm":0,"fg_pct":0.0,"fg3a":1,"fg3m":0,"fg3_pct":0.0,"fg2a":0,"fg2m":0,"fg2_pct":null,"fta":2,"ftm":1,"ft_pct":50.0,"pts":1,"zones":{"rim":{"fga":0,"fgm":0,"pct":null,"share":0.0},"paint":{"fga":0,"fgm":0,"pct":null,"share":0.0},"mid":{"fga":0,"fgm":0,"pct":null,"share":0.0},"three":{"fga":1,"fgm":0,"pct":0.0,"share":100.0}},"areas":{"left_corner":{"fga":1,"fgm":0,"pct":0.0,"share":100.0},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"middle":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"kinds":{"catch":{"fga":1,"fgm":0,"pct":0.0},"dribble":{"fga":0,"fgm":0,"pct":null}},"left_share":100.0,"right_share":0.0,"avg_dist_ft":23.3,"oreb":1,"dreb":1,"reb":2,"ast":0,"tov":0,"stl":0,"touches":8,"avg_touch_s":2.1,"tov_per_touch":0.0,"tracked_min":8.0,"dist_ft":2439,"dist_per_min":305.6,"avg_speed_mph":4.0,"top_speed_mph":14.9,"paint_pct":19.2,"spacing_ft":10.7,"open_ft":5.0,"pressure_ft":4.3,"heat":[[3,1,2.92],[2,1,2.71],[2,2,1.25],[2,4,1.46],[3,5,2.51],[2,5,1.67],[5,4,0.63],[8,4,1.04],[9,5,1.25],[10,5,0.63],[10,6,1.46],[11,6,2.3],[12,7,2.51],[12,4,2.51],[12,3,3.76],[11,3,3.34],[11,2,4.8],[12,2,2.71],[12,1,2.51],[8,3,0.63],[5,2,1.25],[3,2,0.84],[1,1,1.67],[1,0,1.25],[1,3,1.25],[1,4,1.25],[1,5,1.25],[2,3,1.67],[7,5,0.21],[8,5,1.04],[12,6,2.71],[12,5,1.46],[11,4,2.92],[11,5,4.8],[11,1,1.46],[6,5,0.84],[4,6,1.67],[3,6,3.13],[2,7,0.63],[1,7,3.55],[0,2,0.21],[10,4,1.67],[6,3,1.25],[4,5,0.84],[3,4,0.84],[2,6,2.09],[1,2,0.84],[1,6,1.67],[5,5,0.84],[13,2,0.63],[9,3,0.42],[6,2,0.21],[4,1,0.42],[3,3,0.63],[1,8,0.42],[0,3,0.21],[4,3,0.42],[9,2,0.21],[4,2,0.84],[10,2,0.84],[6,6,0.42],[9,4,0.84],[10,3,2.3],[0,7,0.42],[8,7,0.21],[7,4,0.21],[9,6,0.42],[7,6,0.42],[4,4,0.84],[5,1,0.21],[9,1,0.21],[10,1,0.21],[5,6,0.21],[13,6,0.21]],"insights":[]},"A23":{"fga":5,"fgm":0,"fg_pct":0.0,"fg3a":2,"fg3m":0,"fg3_pct":0.0,"fg2a":3,"fg2m":0,"fg2_pct":0.0,"fta":2,"ftm":1,"ft_pct":50.0,"pts":1,"zones":{"rim":{"fga":1,"fgm":0,"pct":0.0,"share":20.0},"paint":{"fga":0,"fgm":0,"pct":null,"share":0.0},"mid":{"fga":2,"fgm":0,"pct":0.0,"share":40.0},"three":{"fga":2,"fgm":0,"pct":0.0,"share":40.0}},"areas":{"left_corner":{"fga":1,"fgm":0,"pct":0.0,"share":20.0},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"middle":{"fga":3,"fgm":0,"pct":0.0,"share":60.0},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_corner":{"fga":1,"fgm":0,"pct":0.0,"share":20.0}},"kinds":{"catch":{"fga":2,"fgm":0,"pct":0.0},"dribble":{"fga":3,"fgm":0,"pct":0.0}},"left_share":50.0,"right_share":50.0,"avg_dist_ft":15.0,"oreb":0,"dreb":4,"reb":4,"ast":0,"tov":4,"stl":1,"touches":22,"avg_touch_s":2.1,"tov_per_touch":18.2,"tracked_min":26.8,"dist_ft":8037,"dist_per_min":299.7,"avg_speed_mph":3.9,"top_speed_mph":14.3,"paint_pct":14.7,"spacing_ft":10.6,"open_ft":4.7,"pressure_ft":4.4,"heat":[[2,2,3.73],[1,1,2.49],[1,3,1.06],[2,4,2.3],[2,5,3.79],[6,3,0.62],[7,3,0.75],[7,4,0.87],[8,4,1.06],[9,2,0.68],[10,2,2.67],[11,1,2.92],[11,3,2.42],[12,5,1.12],[8,3,0.75],[4,2,0.68],[3,2,2.18],[3,3,2.55],[3,4,2.86],[3,5,1.99],[2,3,2.42],[6,4,0.62],[11,0,0.19],[12,0,0.87],[11,2,1.8],[10,3,1.93],[12,1,2.61],[11,5,2.42],[8,5,0.5],[5,5,0.93],[3,6,1.31],[2,6,2.49],[1,7,1.86],[1,2,1.68],[0,3,0.12],[1,4,0.75],[4,5,1.24],[6,5,0.5],[8,6,0.44],[9,6,0.68],[9,4,1.55],[9,3,1.12],[10,5,1.68],[7,5,0.44],[4,3,1.06],[8,2,0.31],[10,1,0.99],[12,2,1.49],[10,4,2.05],[4,4,1.37],[0,2,0.12],[2,1,2.36],[12,3,0.75],[1,6,1.74],[5,4,0.68],[10,6,1.24],[11,6,2.24],[11,4,1.86],[13,1,0.25],[5,2,0.31],[0,4,0.12],[6,1,0.12],[12,6,2.11],[9,5,0.62],[11,7,0.31],[12,4,0.81],[6,2,0.25],[3,1,0.81],[0,5,0.12],[1,5,1.06],[12,7,1.18],[7,2,0.37],[13,7,0.37],[13,2,0.25],[7,1,0.06],[8,1,0.12],[9,1,0.25],[4,6,0.62],[0,6,0.06],[13,5,0.19],[5,6,0.37],[5,1,0.12],[5,3,0.19],[10,0,0.06],[13,3,0.12],[13,4,0.25],[3,7,0.25],[0,1,0.25],[0,0,0.06],[1,0,0.19],[2,7,0.68],[7,6,0.25],[5,7,0.06],[8,7,0.06],[9,7,0.06],[6,6,0.12],[13,6,0.19],[4,1,0.06],[0,7,0.25],[4,7,0.06],[10,7,0.06]],"insights":[{"kind":"focus","title":"Protect the ball","detail":"4 turnovers on 22 touches.","drill":"Two-ball dribbling and pivot-and-pass under pressure."}]},"A31":{"fga":0,"fgm":0,"fg_pct":null,"fg3a":0,"fg3m":0,"fg3_pct":null,"fg2a":0,"fg2m":0,"fg2_pct":null,"fta":0,"ftm":0,"ft_pct":null,"pts":0,"zones":{"rim":{"fga":0,"fgm":0,"pct":null,"share":null},"paint":{"fga":0,"fgm":0,"pct":null,"share":null},"mid":{"fga":0,"fgm":0,"pct":null,"share":null},"three":{"fga":0,"fgm":0,"pct":null,"share":null}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":null},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":null},"middle":{"fga":0,"fgm":0,"pct":null,"share":null},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":null},"right_corner":{"fga":0,"fgm":0,"pct":null,"share":null}},"kinds":{"catch":{"fga":0,"fgm":0,"pct":null},"dribble":{"fga":0,"fgm":0,"pct":null}},"left_share":null,"right_share":null,"avg_dist_ft":null,"oreb":0,"dreb":0,"reb":0,"ast":0,"tov":1,"stl":0,"touches":2,"avg_touch_s":2.6,"tov_per_touch":50.0,"tracked_min":6.2,"dist_ft":1858,"dist_per_min":299.7,"avg_speed_mph":3.9,"top_speed_mph":12.6,"paint_pct":21.2,"spacing_ft":9.7,"open_ft":3.4,"pressure_ft":4.5,"heat":[[7,3,0.27],[8,5,1.61],[10,6,1.61],[11,6,1.34],[11,5,5.38],[12,5,2.96],[12,6,4.3],[13,7,1.08],[13,4,0.27],[12,3,4.3],[12,4,5.91],[9,4,1.34],[7,4,0.81],[5,4,1.08],[4,4,1.88],[3,4,2.15],[3,3,1.61],[2,5,0.81],[2,6,1.08],[1,6,2.69],[1,7,1.88],[1,4,1.34],[10,3,0.54],[11,3,4.57],[12,2,3.76],[12,1,2.15],[11,1,1.61],[12,7,1.08],[10,1,0.27],[11,2,4.57],[11,4,2.69],[10,4,2.42],[8,2,0.54],[6,2,0.27],[5,3,1.61],[3,5,0.81],[1,5,0.81],[0,6,0.27],[0,4,0.27],[0,2,0.54],[0,3,0.27],[6,3,0.27],[8,4,0.27],[10,5,1.08],[4,3,0.54],[3,2,1.34],[2,1,2.42],[1,1,2.42],[1,3,0.27],[7,5,0.81],[9,6,1.08],[13,5,0.27],[6,5,0.54],[4,6,0.27],[3,6,0.27],[2,3,0.81],[2,2,2.15],[1,2,1.08],[0,1,0.27],[6,1,0.27],[7,1,0.27],[8,1,0.54],[9,2,0.27],[8,3,0.54],[10,2,0.27],[4,5,0.81],[2,4,1.34],[9,3,0.27],[4,2,0.54],[3,1,0.27],[1,0,1.08],[0,0,0.27],[5,5,0.54],[5,2,0.27],[9,5,0.27],[13,1,0.81],[6,4,0.27],[2,7,0.27]],"insights":[]},"B1":{"fga":17,"fgm":7,"fg_pct":41.2,"fg3a":3,"fg3m":0,"fg3_pct":0.0,"fg2a":14,"fg2m":7,"fg2_pct":50.0,"fta":2,"ftm":0,"ft_pct":0.0,"pts":14,"zones":{"rim":{"fga":7,"fgm":3,"pct":42.9,"share":41.2},"paint":{"fga":1,"fgm":0,"pct":0.0,"share":5.9},"mid":{"fga":6,"fgm":4,"pct":66.7,"share":35.3},"three":{"fga":3,"fgm":0,"pct":0.0,"share":17.6}},"areas":{"left_corner":{"fga":2,"fgm":0,"pct":0.0,"share":11.8},"left_wing":{"fga":5,"fgm":4,"pct":80.0,"share":29.4},"middle":{"fga":6,"fgm":2,"pct":33.3,"share":35.3},"right_wing":{"fga":2,"fgm":0,"pct":0.0,"share":11.8},"right_corner":{"fga":2,"fgm":1,"pct":50.0,"share":11.8}},"kinds":{"catch":{"fga":9,"fgm":5,"pct":55.6},"dribble":{"fga":8,"fgm":2,"pct":25.0}},"left_share":63.6,"right_share":36.4,"avg_dist_ft":10.8,"oreb":2,"dreb":4,"reb":6,"ast":3,"tov":4,"stl":0,"touches":59,"avg_touch_s":3.4,"tov_per_touch":6.8,"tracked_min":19.0,"dist_ft":5817,"dist_per_min":306.5,"avg_speed_mph":4.0,"top_speed_mph":13.9,"paint_pct":14.5,"spacing_ft":10.6,"open_ft":4.9,"pressure_ft":4.7,"heat":[[9,2,0.88],[10,3,1.84],[11,4,1.76],[12,5,1.67],[12,6,3.86],[13,6,0.35],[11,6,3.6],[7,6,0.18],[6,5,0.44],[5,4,1.49],[3,5,2.9],[2,6,2.55],[2,5,1.76],[2,4,2.11],[3,3,2.46],[3,2,3.86],[1,6,1.84],[2,2,2.63],[3,1,0.61],[6,2,0.44],[8,1,0.26],[9,3,0.88],[11,5,2.63],[12,4,1.05],[12,3,1.4],[7,4,0.97],[6,4,1.23],[4,4,2.11],[4,5,0.7],[3,6,1.32],[2,7,0.53],[5,5,0.79],[7,3,0.35],[8,3,0.79],[10,4,2.72],[10,5,2.99],[11,3,1.67],[12,2,1.49],[13,1,0.26],[5,3,0.79],[4,2,0.88],[2,1,2.19],[2,0,0.09],[4,3,1.67],[10,2,1.84],[11,2,1.58],[11,1,2.11],[1,7,1.49],[1,5,0.97],[0,3,0.35],[1,2,1.05],[0,1,0.26],[0,6,0.44],[3,4,2.99],[2,3,1.67],[1,4,0.79],[7,2,0.53],[8,2,0.61],[12,1,1.58],[13,5,0.09],[8,4,0.97],[0,7,0.44],[0,8,0.09],[4,6,0.09],[8,5,0.7],[10,6,1.58],[8,7,0.18],[5,7,0.09],[1,3,0.88],[1,1,2.11],[4,1,0.26],[9,5,0.35],[10,1,0.61],[5,1,0.18],[7,5,0.18],[9,4,0.61],[5,2,0.18],[1,0,0.09],[0,0,0.09],[6,3,0.35],[12,7,1.4],[6,1,0.09],[10,7,0.18],[11,7,0.61],[8,6,0.09],[9,6,0.44],[13,7,0.44],[9,1,0.35],[13,0,0.09],[12,0,0.97]],"insights":[{"kind":"strength","title":"Hot from mid-range","detail":"4/6 (66.7%).","drill":null},{"kind":"focus","title":"Better off the catch","detail":"Catch-and-shoot 55.6% vs off-dribble 25%.","drill":"Move without the ball to get catch-and-shoot looks; work on 1-2 step pull-ups."},{"kind":"strength","title":"Playmaker","detail":"3 assists (estimated).","drill":null}]},"B2":{"fga":11,"fgm":4,"fg_pct":36.4,"fg3a":2,"fg3m":1,"fg3_pct":50.0,"fg2a":9,"fg2m":3,"fg2_pct":33.3,"fta":0,"ftm":0,"ft_pct":null,"pts":9,"zones":{"rim":{"fga":5,"fgm":3,"pct":60.0,"share":45.5},"paint":{"fga":2,"fgm":0,"pct":0.0,"share":18.2},"mid":{"fga":2,"fgm":0,"pct":0.0,"share":18.2},"three":{"fga":2,"fgm":1,"pct":50.0,"share":18.2}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0},"left_wing":{"fga":2,"fgm":0,"pct":0.0,"share":18.2},"middle":{"fga":7,"fgm":4,"pct":57.1,"share":63.6},"right_wing":{"fga":2,"fgm":0,"pct":0.0,"share":18.2},"right_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"kinds":{"catch":{"fga":5,"fgm":3,"pct":60.0},"dribble":{"fga":6,"fgm":1,"pct":16.7}},"left_share":50.0,"right_share":50.0,"avg_dist_ft":9.2,"oreb":1,"dreb":4,"reb":5,"ast":1,"tov":0,"stl":0,"touches":30,"avg_touch_s":2.3,"tov_per_touch":0.0,"tracked_min":28.7,"dist_ft":8957,"dist_per_min":312.1,"avg_speed_mph":4.0,"top_speed_mph":14.5,"paint_pct":16.6,"spacing_ft":10.7,"open_ft":4.6,"pressure_ft":4.2,"heat":[[8,4,0.87],[9,3,0.93],[10,3,1.92],[11,1,1.57],[12,1,2.38],[12,2,1.92],[12,3,2.67],[12,4,2.9],[12,5,0.99],[5,5,0.46],[4,6,0.46],[3,6,1.63],[2,6,2.38],[2,7,0.52],[1,7,1.34],[2,5,2.44],[3,5,2.67],[3,4,2.26],[2,3,1.57],[2,2,2.56],[1,1,2.5],[1,3,1.1],[1,4,0.7],[5,4,0.87],[7,5,0.52],[9,4,1.57],[10,4,1.86],[11,3,1.92],[11,4,2.03],[12,6,1.51],[11,6,2.73],[11,5,2.03],[10,2,2.15],[11,2,2.15],[8,5,0.64],[6,5,0.41],[4,3,0.81],[4,2,0.75],[3,1,1.22],[1,6,2.03],[8,6,0.17],[9,5,0.81],[6,4,0.87],[9,2,0.64],[13,4,0.17],[6,3,0.7],[4,1,0.52],[2,1,3.19],[0,5,0.06],[0,6,0.12],[7,4,0.58],[5,3,0.81],[3,2,2.44],[1,0,0.7],[2,4,2.09],[7,3,0.87],[8,3,0.75],[6,2,0.35],[5,2,0.41],[4,4,1.57],[4,5,0.35],[6,6,0.35],[1,2,1.34],[0,1,0.35],[10,5,2.9],[3,3,2.73],[8,2,0.35],[13,1,0.35],[7,2,0.23],[5,1,0.12],[6,1,0.17],[8,1,0.23],[10,1,0.41],[3,7,0.12],[10,6,1.63],[1,5,0.7],[0,7,0.41],[13,6,0.17],[2,0,0.12],[3,0,0.06],[13,5,0.29],[5,6,0.12],[13,0,0.46],[12,7,1.22],[7,1,0.23],[9,1,0.23],[10,0,0.06],[12,0,1.16],[8,0,0.06],[7,6,0.17],[9,6,0.12],[13,3,0.12],[11,7,0.35],[10,7,0.06],[11,0,0.23],[0,4,0.06],[0,2,0.17],[13,2,0.06]],"insights":[{"kind":"strength","title":"Hot from at rim","detail":"3/5 (60%).","drill":null},{"kind":"focus","title":"Better off the catch","detail":"Catch-and-shoot 60% vs off-dribble 16.7%.","drill":"Move without the ball to get catch-and-shoot looks; work on 1-2 step pull-ups."}]},"B4":{"fga":4,"fgm":3,"fg_pct":75.0,"fg3a":1,"fg3m":1,"fg3_pct":100.0,"fg2a":3,"fg2m":2,"fg2_pct":66.7,"fta":0,"ftm":0,"ft_pct":null,"pts":7,"zones":{"rim":{"fga":2,"fgm":2,"pct":100.0,"share":50.0},"paint":{"fga":0,"fgm":0,"pct":null,"share":0.0},"mid":{"fga":1,"fgm":0,"pct":0.0,"share":25.0},"three":{"fga":1,"fgm":1,"pct":100.0,"share":25.0}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0},"left_wing":{"fga":2,"fgm":2,"pct":100.0,"share":50.0},"middle":{"fga":1,"fgm":1,"pct":100.0,"share":25.0},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_corner":{"fga":1,"fgm":0,"pct":0.0,"share":25.0}},"kinds":{"catch":{"fga":1,"fgm":1,"pct":100.0},"dribble":{"fga":3,"fgm":2,"pct":66.7}},"left_share":66.7,"right_share":33.3,"avg_dist_ft":10.8,"oreb":2,"dreb":2,"reb":4,"ast":2,"tov":1,"stl":3,"touches":16,"avg_touch_s":2.4,"tov_per_touch":6.2,"tracked_min":22.4,"dist_ft":6918,"dist_per_min":309.5,"avg_speed_mph":4.0,"top_speed_mph":14.4,"paint_pct":14.3,"spacing_ft":10.9,"open_ft":5.1,"pressure_ft":4.4,"heat":[[6,4,0.75],[8,5,0.37],[10,5,1.34],[11,6,1.94],[11,5,2.24],[12,5,1.72],[12,6,3.73],[12,4,2.39],[12,3,1.79],[9,4,1.79],[7,4,0.82],[5,4,1.12],[4,4,2.16],[3,5,3.13],[1,7,1.12],[2,5,1.86],[2,4,1.57],[8,4,0.67],[10,3,2.01],[11,3,1.72],[12,2,1.34],[13,1,0.52],[12,1,2.01],[11,1,2.16],[11,2,2.39],[11,4,1.86],[9,2,0.89],[6,2,0.6],[5,3,0.52],[2,6,2.61],[1,6,1.86],[1,4,0.6],[1,3,0.97],[1,2,1.72],[1,1,2.09],[4,3,1.34],[6,3,0.37],[10,4,1.04],[7,3,0.67],[5,2,0.82],[4,2,1.04],[4,1,0.82],[3,1,2.01],[2,0,0.3],[1,0,0.97],[2,2,2.09],[2,3,1.49],[9,5,1.34],[10,6,0.6],[13,2,0.37],[13,6,0.45],[7,5,0.15],[5,6,0.3],[3,6,1.57],[2,7,0.3],[3,4,2.83],[3,3,2.98],[3,2,1.79],[2,1,2.16],[7,1,0.45],[8,1,0.37],[9,1,0.37],[10,2,2.16],[0,6,0.22],[10,1,1.34],[8,3,0.82],[6,5,0.37],[9,6,0.37],[4,5,0.82],[7,2,0.37],[9,3,1.34],[1,5,0.37],[8,2,0.3],[5,5,0.6],[4,6,0.3],[6,6,0.07],[8,6,0.22],[6,1,0.15],[5,1,0.45],[0,0,0.45],[13,3,0.22],[8,7,0.07],[0,4,0.3],[0,1,0.67],[0,3,0.15],[7,6,0.15],[12,7,0.89],[9,0,0.07],[10,0,0.07],[11,0,0.07],[12,0,0.75],[0,2,0.3],[8,0,0.07],[13,7,0.07]],"insights":[]},"B7":{"fga":11,"fgm":5,"fg_pct":45.5,"fg3a":1,"fg3m":0,"fg3_pct":0.0,"fg2a":10,"fg2m":5,"fg2_pct":50.0,"fta":0,"ftm":0,"ft_pct":null,"pts":10,"zones":{"rim":{"fga":5,"fgm":3,"pct":60.0,"share":45.5},"paint":{"fga":4,"fgm":2,"pct":50.0,"share":36.4},"mid":{"fga":1,"fgm":0,"pct":0.0,"share":9.1},"three":{"fga":1,"fgm":0,"pct":0.0,"share":9.1}},"areas":{"left_corner":{"fga":1,"fgm":0,"pct":0.0,"share":9.1},"left_wing":{"fga":3,"fgm":2,"pct":66.7,"share":27.3},"middle":{"fga":6,"fgm":3,"pct":50.0,"share":54.5},"right_wing":{"fga":1,"fgm":0,"pct":0.0,"share":9.1},"right_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"kinds":{"catch":{"fga":7,"fgm":3,"pct":42.9},"dribble":{"fga":4,"fgm":2,"pct":50.0}},"left_share":80.0,"right_share":20.0,"avg_dist_ft":8.4,"oreb":1,"dreb":0,"reb":1,"ast":1,"tov":1,"stl":1,"touches":32,"avg_touch_s":3.6,"tov_per_touch":3.1,"tracked_min":17.5,"dist_ft":5432,"dist_per_min":311.0,"avg_speed_mph":4.0,"top_speed_mph":14.3,"paint_pct":15.1,"spacing_ft":10.5,"open_ft":4.7,"pressure_ft":4.7,"heat":[[11,3,2.77],[11,4,2.39],[11,5,3.05],[11,6,2.19],[12,6,3.82],[10,4,2.58],[13,4,0.29],[13,3,0.19],[13,2,0.19],[12,2,1.81],[12,1,2.19],[11,1,1.15],[10,5,2.1],[7,3,0.57],[5,2,0.29],[3,5,2.67],[2,6,2.19],[1,3,0.86],[0,1,0.48],[2,4,1.53],[2,5,2.1],[3,3,2.39],[3,2,2.1],[2,1,1.05],[1,1,3.34],[6,4,0.67],[8,3,0.38],[10,2,2.86],[11,2,4.39],[12,7,0.48],[12,5,1.05],[12,4,0.57],[13,6,0.38],[7,5,0.57],[6,5,0.38],[5,6,0.19],[4,6,0.38],[3,4,1.91],[2,2,2.86],[7,4,0.76],[9,5,0.57],[5,5,0.57],[3,6,2.19],[2,3,2.0],[8,2,0.76],[9,1,0.19],[10,1,1.05],[10,3,2.58],[6,2,0.48],[4,1,0.1],[3,1,0.48],[2,0,0.38],[1,0,0.67],[6,6,0.19],[8,6,0.48],[9,6,0.86],[12,3,0.76],[4,4,1.62],[1,6,2.19],[4,5,0.95],[9,3,1.43],[5,7,0.1],[1,2,0.67],[6,3,0.19],[8,4,0.76],[5,4,1.43],[1,7,2.29],[2,7,0.29],[1,8,0.1],[10,6,1.62],[13,5,0.29],[4,3,1.43],[4,2,0.29],[13,1,0.48],[9,2,0.38],[8,5,0.48],[5,3,0.38],[7,2,0.29],[5,1,0.29],[4,7,0.1],[6,7,0.1],[9,4,1.05],[8,1,0.29],[0,7,0.29],[1,5,0.86],[3,7,0.1],[1,4,0.48],[0,3,0.38],[0,2,0.67],[6,1,0.1],[0,6,0.57],[11,7,0.29],[0,4,0.19],[7,6,0.1],[12,0,0.1]],"insights":[{"kind":"strength","title":"Hot from at rim","detail":"3/5 (60%).","drill":null},{"kind":"strength","title":"Hot from paint","detail":"2/4 (50%).","drill":null},{"kind":"focus","title":"Develop the right side","detail":"80% of side shots come from the left.","drill":"Right-hand dribble series and right-side layups."},{"kind":"focus","title":"Quicker decisions","detail":"Holds the ball 3.6 s per touch (team avg 2.5 s).","drill":"0.5-second rule in practice: catch \u2192 shoot, pass or drive."}]},"B12":{"fga":4,"fgm":4,"fg_pct":100.0,"fg3a":0,"fg3m":0,"fg3_pct":null,"fg2a":4,"fg2m":4,"fg2_pct":100.0,"fta":0,"ftm":0,"ft_pct":null,"pts":8,"zones":{"rim":{"fga":4,"fgm":4,"pct":100.0,"share":100.0},"paint":{"fga":0,"fgm":0,"pct":null,"share":0.0},"mid":{"fga":0,"fgm":0,"pct":null,"share":0.0},"three":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"areas":{"left_corner":{"fga":1,"fgm":1,"pct":100.0,"share":25.0},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"middle":{"fga":2,"fgm":2,"pct":100.0,"share":50.0},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_corner":{"fga":1,"fgm":1,"pct":100.0,"share":25.0}},"kinds":{"catch":{"fga":3,"fgm":3,"pct":100.0},"dribble":{"fga":1,"fgm":1,"pct":100.0}},"left_share":50.0,"right_share":50.0,"avg_dist_ft":3.6,"oreb":3,"dreb":3,"reb":6,"ast":3,"tov":0,"stl":1,"touches":12,"avg_touch_s":2.4,"tov_per_touch":0.0,"tracked_min":22.9,"dist_ft":6562,"dist_per_min":286.2,"avg_speed_mph":3.7,"top_speed_mph":14.9,"paint_pct":25.4,"spacing_ft":9.6,"open_ft":4.0,"pressure_ft":4.3,"heat":[[4,6,0.15],[3,7,0.07],[2,7,0.15],[2,6,1.38],[1,5,2.69],[1,6,1.89],[1,7,1.16],[5,6,0.07],[7,7,0.07],[9,6,0.44],[10,6,1.31],[11,7,0.29],[11,5,3.42],[12,4,3.42],[12,3,3.63],[12,5,3.05],[11,4,2.03],[7,4,0.51],[5,4,0.8],[4,4,1.74],[3,3,2.76],[2,3,2.18],[2,2,2.18],[1,3,3.85],[1,2,3.12],[1,4,3.27],[5,5,0.65],[8,5,0.44],[9,5,1.09],[10,4,1.74],[13,5,0.15],[13,3,0.22],[13,2,0.36],[8,2,0.29],[6,2,0.22],[4,3,1.45],[3,2,2.03],[3,4,2.03],[3,5,2.11],[2,4,2.69],[6,3,1.24],[8,3,1.24],[11,3,1.67],[11,2,2.18],[12,2,3.2],[9,4,1.02],[6,4,0.65],[10,5,1.53],[5,2,0.36],[4,1,0.07],[2,1,1.89],[2,0,0.15],[1,0,0.15],[1,1,1.67],[0,6,0.07],[0,1,0.22],[0,0,0.15],[8,4,1.16],[10,3,1.45],[7,3,0.58],[2,5,4.0],[5,3,0.36],[9,3,0.51],[12,6,1.38],[13,6,0.58],[4,2,0.65],[13,1,0.22],[6,6,0.15],[4,5,0.73],[10,2,1.16],[3,6,0.65],[11,1,0.87],[12,1,1.74],[7,5,0.36],[0,2,0.15],[11,6,1.67],[13,7,0.29],[0,7,0.07],[3,1,0.36],[7,2,0.15],[9,2,0.22],[0,4,0.07],[8,7,0.07],[10,7,0.15],[12,7,0.94],[12,0,0.15],[0,5,0.07],[8,6,0.07],[6,5,0.22],[10,1,0.22]],"insights":[{"kind":"strength","title":"Hot from at rim","detail":"4/4 (100%).","drill":null},{"kind":"strength","title":"Crashes the offensive glass","detail":"3 offensive rebounds.","drill":null},{"kind":"strength","title":"Playmaker","detail":"3 assists (estimated).","drill":null}]},"B15":{"fga":0,"fgm":0,"fg_pct":null,"fg3a":0,"fg3m":0,"fg3_pct":null,"fg2a":0,"fg2m":0,"fg2_pct":null,"fta":0,"ftm":0,"ft_pct":null,"pts":0,"zones":{"rim":{"fga":0,"fgm":0,"pct":null,"share":null},"paint":{"fga":0,"fgm":0,"pct":null,"share":null},"mid":{"fga":0,"fgm":0,"pct":null,"share":null},"three":{"fga":0,"fgm":0,"pct":null,"share":null}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":null},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":null},"middle":{"fga":0,"fgm":0,"pct":null,"share":null},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":null},"right_corner":{"fga":0,"fgm":0,"pct":null,"share":null}},"kinds":{"catch":{"fga":0,"fgm":0,"pct":null},"dribble":{"fga":0,"fgm":0,"pct":null}},"left_share":null,"right_share":null,"avg_dist_ft":null,"oreb":0,"dreb":1,"reb":1,"ast":1,"tov":0,"stl":0,"touches":4,"avg_touch_s":1.9,"tov_per_touch":0.0,"tracked_min":28.6,"dist_ft":8387,"dist_per_min":293.4,"avg_speed_mph":3.8,"top_speed_mph":13.6,"paint_pct":13.6,"spacing_ft":9.9,"open_ft":4.7,"pressure_ft":4.6,"heat":[[10,2,3.27],[10,3,3.5],[9,3,1.87],[10,4,2.97],[9,4,2.27],[10,5,2.68],[11,5,2.04],[11,6,3.62],[11,3,1.92],[12,2,1.17],[11,2,2.27],[8,2,0.47],[6,1,0.17],[4,1,0.23],[2,1,2.04],[2,0,0.12],[1,0,0.82],[1,1,1.69],[2,2,2.8],[2,3,2.04],[2,4,1.81],[2,5,2.45],[3,5,2.1],[3,4,2.74],[7,5,0.41],[9,5,0.76],[10,6,1.34],[11,4,1.28],[12,3,0.76],[12,1,2.16],[13,1,0.06],[12,4,0.87],[12,5,0.64],[12,6,2.1],[8,6,0.58],[5,5,0.82],[4,5,0.93],[4,4,1.46],[3,3,2.74],[6,3,0.35],[5,6,0.64],[5,2,0.47],[8,4,0.64],[12,7,1.4],[5,7,0.17],[4,6,0.7],[3,6,1.69],[2,7,0.47],[2,6,1.98],[3,2,2.68],[1,6,2.74],[1,4,1.11],[7,2,0.35],[9,2,0.7],[6,5,0.29],[4,3,1.34],[3,1,0.35],[1,5,1.57],[0,4,0.17],[1,3,0.99],[1,2,0.58],[9,6,0.41],[11,1,1.34],[8,3,0.41],[6,4,0.52],[5,1,0.17],[13,2,0.06],[7,4,0.64],[5,4,0.52],[5,3,0.87],[4,2,0.76],[8,5,0.41],[6,2,0.12],[4,0,0.06],[3,7,0.06],[7,3,0.52],[13,5,0.23],[13,6,0.29],[13,7,0.17],[7,1,0.17],[8,1,0.23],[13,4,0.06],[1,7,0.47],[0,0,0.12],[0,1,0.06],[6,6,0.29],[8,7,0.17],[10,7,0.12],[11,7,0.35],[9,1,0.64],[10,1,2.39],[0,2,0.23],[7,7,0.06],[11,0,0.29],[12,0,0.35],[0,5,0.17],[0,7,0.23],[0,6,0.23],[9,7,0.06],[0,3,0.12],[10,0,0.12],[7,6,0.12]],"insights":[{"kind":"focus","title":"Be more aggressive","detail":"Only 0 shots in 28.6 tracked minutes.","drill":"Look for the shot first when open; attack closeouts."}]},"B20":{"fga":3,"fgm":0,"fg_pct":0.0,"fg3a":2,"fg3m":0,"fg3_pct":0.0,"fg2a":1,"fg2m":0,"fg2_pct":0.0,"fta":2,"ftm":0,"ft_pct":0.0,"pts":0,"zones":{"rim":{"fga":0,"fgm":0,"pct":null,"share":0.0},"paint":{"fga":0,"fgm":0,"pct":null,"share":0.0},"mid":{"fga":1,"fgm":0,"pct":0.0,"share":33.3},"three":{"fga":2,"fgm":0,"pct":0.0,"share":66.7}},"areas":{"left_corner":{"fga":1,"fgm":0,"pct":0.0,"share":33.3},"left_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"middle":{"fga":1,"fgm":0,"pct":0.0,"share":33.3},"right_wing":{"fga":0,"fgm":0,"pct":null,"share":0.0},"right_corner":{"fga":1,"fgm":0,"pct":0.0,"share":33.3}},"kinds":{"catch":{"fga":1,"fgm":0,"pct":0.0},"dribble":{"fga":2,"fgm":0,"pct":0.0}},"left_share":50.0,"right_share":50.0,"avg_dist_ft":17.8,"oreb":2,"dreb":2,"reb":4,"ast":0,"tov":0,"stl":1,"touches":10,"avg_touch_s":2.0,"tov_per_touch":0.0,"tracked_min":21.9,"dist_ft":6621,"dist_per_min":302.6,"avg_speed_mph":3.9,"top_speed_mph":13.0,"paint_pct":11.8,"spacing_ft":10.5,"open_ft":4.8,"pressure_ft":4.6,"heat":[[8,4,0.91],[10,2,3.35],[11,2,3.96],[11,1,2.97],[10,3,3.12],[11,3,1.83],[12,2,1.22],[12,1,4.19],[8,3,0.76],[7,4,0.84],[5,3,1.37],[4,3,0.76],[4,2,0.53],[4,4,2.06],[4,5,0.91],[3,5,3.05],[3,4,3.88],[3,3,2.89],[3,2,1.45],[6,4,0.76],[10,1,1.07],[10,4,2.89],[11,5,1.83],[11,6,2.21],[12,6,1.68],[11,4,1.14],[12,3,0.91],[10,5,1.9],[7,1,0.23],[5,1,0.15],[3,1,0.53],[2,0,0.23],[1,0,0.53],[2,3,1.9],[2,4,1.22],[9,3,1.29],[13,1,0.53],[9,1,0.15],[5,4,1.14],[3,6,1.68],[2,7,0.46],[1,7,1.07],[6,6,0.3],[8,5,0.53],[9,4,1.6],[8,0,0.08],[2,6,1.68],[12,4,0.76],[13,6,0.61],[2,2,2.44],[2,1,0.99],[6,2,0.38],[8,2,0.46],[9,2,0.46],[7,6,0.3],[5,6,0.3],[3,7,0.38],[1,5,1.68],[1,3,1.52],[1,2,1.83],[0,1,0.53],[6,3,0.69],[1,1,1.14],[9,5,0.76],[0,0,0.15],[12,5,0.69],[13,5,0.15],[5,5,0.46],[1,6,2.28],[1,4,0.53],[2,5,1.9],[0,5,0.23],[7,5,0.46],[6,5,0.3],[13,3,0.08],[12,7,1.22],[13,7,0.15],[11,7,1.29],[4,6,0.3],[10,6,1.45],[4,7,0.08],[6,7,0.08],[8,1,0.3],[4,1,0.15],[8,6,0.15],[7,3,0.46],[11,0,0.15],[12,0,0.38],[5,2,0.38],[9,6,0.38],[0,2,0.15],[10,7,0.08],[13,0,0.15],[13,4,0.15],[8,7,0.08],[7,2,0.15],[13,2,0.08]],"insights":[]},"B24":{"fga":4,"fgm":1,"fg_pct":25.0,"fg3a":0,"fg3m":0,"fg3_pct":null,"fg2a":4,"fg2m":1,"fg2_pct":25.0,"fta":0,"ftm":0,"ft_pct":null,"pts":2,"zones":{"rim":{"fga":1,"fgm":0,"pct":0.0,"share":25.0},"paint":{"fga":1,"fgm":1,"pct":100.0,"share":25.0},"mid":{"fga":2,"fgm":0,"pct":0.0,"share":50.0},"three":{"fga":0,"fgm":0,"pct":null,"share":0.0}},"areas":{"left_corner":{"fga":0,"fgm":0,"pct":null,"share":0.0},"left_wing":{"fga":1,"fgm":1,"pct":100.0,"share":25.0},"middle":{"fga":1,"fgm":0,"pct":0.0,"share":25.0},"right_wing":{"fga":1,"fgm":0,"pct":0.0,"share":25.0},"right_corner":{"fga":1,"fgm":0,"pct":0.0,"share":25.0}},"kinds":{"catch":{"fga":2,"fgm":1,"pct":50.0},"dribble":{"fga":2,"fgm":0,"pct":0.0}},"left_share":33.3,"right_share":66.7,"avg_dist_ft":11.5,"oreb":1,"dreb":0,"reb":1,"ast":0,"tov":0,"stl":0,"touches":9,"avg_touch_s":2.3,"tov_per_touch":0.0,"tracked_min":4.2,"dist_ft":1205,"dist_per_min":284.5,"avg_speed_mph":3.7,"top_speed_mph":14.9,"paint_pct":24.8,"spacing_ft":9.7,"open_ft":4.4,"pressure_ft":4.7,"heat":[[8,6,0.39],[9,6,0.39],[10,6,1.18],[11,5,2.36],[12,5,10.63],[8,4,1.18],[6,4,0.79],[4,5,1.18],[3,6,0.39],[2,6,3.54],[1,6,3.54],[0,6,1.97],[1,5,1.57],[2,5,2.76],[2,4,2.76],[3,4,2.76],[3,5,0.79],[6,6,0.39],[10,7,0.39],[11,7,0.39],[11,6,1.97],[12,6,3.15],[12,4,5.91],[12,3,4.33],[8,3,1.18],[6,3,1.57],[5,3,1.18],[3,2,3.15],[2,1,0.39],[1,1,2.36],[2,2,2.36],[2,3,2.36],[7,4,1.57],[8,5,0.79],[9,5,0.79],[10,5,0.79],[6,5,0.39],[5,5,1.18],[4,6,0.39],[4,4,1.18],[1,3,0.79],[9,4,0.79],[9,3,1.57],[10,2,2.36],[11,3,1.57],[12,7,0.39],[8,2,0.79],[4,3,1.18],[1,4,0.39],[10,3,0.79],[10,1,0.39],[11,1,0.79],[11,4,3.54],[13,2,0.39],[9,2,1.57],[3,3,0.79],[1,7,0.79],[7,3,1.18],[13,6,0.79],[13,7,0.39],[6,2,0.39],[5,2,0.39],[4,2,0.39],[11,2,0.39],[12,1,0.39],[12,2,0.39]],"insights":[]}},"teams":{"A":{"fga":37,"fgm":16,"fg_pct":43.2,"fg3a":8,"fg3m":2,"fg3_pct":25.0,"fg2a":29,"fg2m":14,"fg2_pct":48.3,"fta":14,"ftm":10,"ft_pct":71.4,"pts":44,"zones":{"rim":{"fga":10,"fgm":6,"pct":60.0,"share":27.0},"paint":{"fga":7,"fgm":4,"pct":57.1,"share":18.9},"mid":{"fga":12,"fgm":4,"pct":33.3,"share":32.4},"three":{"fga":8,"fgm":2,"pct":25.0,"share":21.6}},"areas":{"left_corner":{"fga":3,"fgm":0,"pct":0.0,"share":8.1},"left_wing":{"fga":3,"fgm":1,"pct":33.3,"share":8.1},"middle":{"fga":16,"fgm":7,"pct":43.8,"share":43.2},"right_wing":{"fga":7,"fgm":4,"pct":57.1,"share":18.9},"right_corner":{"fga":8,"fgm":4,"pct":50.0,"share":21.6}},"kinds":{"catch":{"fga":20,"fgm":9,"pct":45.0},"dribble":{"fga":17,"fgm":7,"pct":41.2}},"left_share":28.6,"right_share":71.4,"avg_dist_ft":11.8,"oreb":5,"dreb":18,"reb":23,"ast":8,"tov":11,"stl":5,"touches":158,"assisted_pct":50.0,"oreb_pct":23.8,"dreb_pct":60.0,"overlay_pts":46,"insights":[{"kind":"strength","title":"Best zone: At rim (<6 ft)","detail":"6/10 (60%).","drill":null},{"kind":"focus","title":"Coldest zone: Three","detail":"2/8 (25%), 21.6% of shots.","drill":null},{"kind":"strength","title":"Ball movement","detail":"50% of made field goals were assisted (est.).","drill":null},{"kind":"focus","title":"Offensive rebounding","detail":"Rebounded 23.8% of own misses.","drill":"Assign 2 crashers on every shot."}]},"B":{"fga":54,"fgm":24,"fg_pct":44.4,"fg3a":9,"fg3m":2,"fg3_pct":22.2,"fg2a":45,"fg2m":22,"fg2_pct":48.9,"fta":4,"ftm":0,"ft_pct":0.0,"pts":50,"zones":{"rim":{"fga":24,"fgm":15,"pct":62.5,"share":44.4},"paint":{"fga":8,"fgm":3,"pct":37.5,"share":14.8},"mid":{"fga":13,"fgm":4,"pct":30.8,"share":24.1},"three":{"fga":9,"fgm":2,"pct":22.2,"share":16.7}},"areas":{"left_corner":{"fga":5,"fgm":1,"pct":20.0,"share":9.3},"left_wing":{"fga":13,"fgm":9,"pct":69.2,"share":24.1},"middle":{"fga":24,"fgm":12,"pct":50.0,"share":44.4},"right_wing":{"fga":6,"fgm":0,"pct":0.0,"share":11.1},"right_corner":{"fga":6,"fgm":2,"pct":33.3,"share":11.1}},"kinds":{"catch":{"fga":28,"fgm":16,"pct":57.1},"dribble":{"fga":26,"fgm":8,"pct":30.8}},"left_share":60.0,"right_share":40.0,"avg_dist_ft":9.7,"oreb":12,"dreb":16,"reb":28,"ast":11,"tov":6,"stl":6,"touches":172,"assisted_pct":45.8,"oreb_pct":40.0,"dreb_pct":76.2,"overlay_pts":52,"insights":[{"kind":"strength","title":"Best zone: At rim (<6 ft)","detail":"15/24 (62.5%).","drill":null},{"kind":"focus","title":"Coldest zone: Three","detail":"2/9 (22.2%), 16.7% of shots.","drill":null},{"kind":"focus","title":"Ball movement","detail":"45.8% of made field goals were assisted (est.).","drill":"Add a 3-pass rule in scrimmages."},{"kind":"strength","title":"Offensive rebounding","detail":"Rebounded 40% of own misses.","drill":null}]}},"flow":[{"t":49.0,"A":0,"B":2},{"t":93.5,"A":1,"B":2},{"t":101.5,"A":2,"B":2},{"t":134.8,"A":2,"B":4},{"t":197.7,"A":4,"B":4},{"t":218.2,"A":4,"B":6},{"t":233.6,"A":7,"B":6},{"t":345.1,"A":9,"B":6},{"t":418.7,"A":11,"B":6},{"t":453.4,"A":13,"B":6},{"t":494.5,"A":15,"B":6},{"t":519.8,"A":15,"B":8},{"t":715.8,"A":16,"B":8},{"t":723.8,"A":17,"B":8},{"t":737.8,"A":17,"B":10},{"t":749.4,"A":19,"B":10},{"t":765.5,"A":19,"B":12},{"t":790.7,"A":21,"B":12},{"t":805.2,"A":21,"B":14},{"t":925.0,"A":21,"B":17},{"t":965.5,"A":21,"B":19},{"t":1122.0,"A":21,"B":21},{"t":1163.5,"A":21,"B":23},{"t":1186.9,"A":23,"B":23},{"t":1225.9,"A":25,"B":23},{"t":1246.9,"A":25,"B":25},{"t":1260.8,"A":28,"B":25},{"t":1415.3,"A":29,"B":25},{"t":1423.3,"A":30,"B":25},{"t":1433.5,"A":30,"B":27},{"t":1450.9,"A":32,"B":27},{"t":1463.8,"A":32,"B":29},{"t":1529.1,"A":34,"B":29},{"t":1565.4,"A":34,"B":31},{"t":1592.2,"A":34,"B":33},{"t":1679.4,"A":35,"B":33},{"t":1698.8,"A":35,"B":35},{"t":1722.5,"A":36,"B":35},{"t":1767.4,"A":38,"B":35},{"t":1782.8,"A":38,"B":37},{"t":1798.5,"A":40,"B":37},{"t":1811.6,"A":40,"B":40},{"t":2036.1,"A":40,"B":42},{"t":2069.7,"A":40,"B":44},{"t":2086.3,"A":42,"B":44},{"t":2105.5,"A":42,"B":46},{"t":2120.2,"A":43,"B":46},{"t":2150.6,"A":43,"B":48},{"t":2173.6,"A":44,"B":48},{"t":2229.7,"A":44,"B":50}]}}</script>
+<script>
+(() => {
+const G = JSON.parse(document.getElementById('game-data').textContent);
+const C = G.court, L = C.length, W = C.width;
+const ST = G.stats, PS = ST.players, TS = ST.teams;
+const teamById = Object.fromEntries(G.teams.map(t => [t.id, t]));
+const playerById = Object.fromEntries(G.players.map(p => [p.id, p]));
+const PAL = ['#2f6fdf','#e0663a','#2aa876','#a14fd6','#d6a21e','#d1437d','#1aa3b5','#6d7a2b'];
+const ZL = {rim:'At rim', paint:'Paint', mid:'Mid-range', three:'Three', ft:'Free throw'};
+const AL = {left_corner:'Left corner', left_wing:'Left wing', middle:'Middle', right_wing:'Right wing', right_corner:'Right corner'};
+const S = {sel: [], team:'all', period:'all', result:'all', zone:'all', value:'all', pinned:null, sort:{k:'pts', d:-1}};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct = v => v == null ? '–' : (Math.round(v) + '%');
+const fmtT = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60;
+  return (h ? h + ':' + String(m).padStart(2,'0') : m) + ':' + String(x).padStart(2,'0'); };
+const pname = p => p ? ('#' + p.number + (p.name ? ' ' + p.name : '')) : 'Unknown';
+const selColor = pid => { const i = S.sel.indexOf(pid); return i < 0 ? null : PAL[i % PAL.length]; };
+const teamColor = tid => (teamById[tid] || {}).mark || (teamById[tid] || {}).color || '#888';
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const P = (x, y) => [x, W - y];                 // court ft (y up) -> svg (y down)
+
+/* ---------------- sample banner, header ---------------- */
+if (G.meta.sample) { const b = $('#sample'); b.hidden = false;
+  b.textContent = 'SAMPLE DATA — this report shows the layout with made-up numbers. Real reports are generated from your XbotGo video.'; }
+document.title = G.meta.title || 'Game Report';
+(function header(){
+  const [a, b] = G.teams;
+  const side = (t, right) => {
+    const st = TS[t.id]; const shown = st.overlay_pts ?? st.pts;
+    const det = st.overlay_pts != null ? `<div class="det num">Scoreboard ${st.overlay_pts} · detected ${st.pts}</div>` : '';
+    const name = `<div><div class="tname">${esc(t.name)}</div>${det}</div>`;
+    const chip = `<span class="chip" style="background:${t.color}"></span>`;
+    const pts = `<div class="pts num">${shown}</div>`;
+    return `<div class="team-score${right ? ' right' : ''}">${right ? pts + name + chip : chip + name + pts}</div>`;
+  };
+  const m = G.meta, src = m.source || {};
+  $('#hdr').innerHTML = side(a, false) +
+    `<div class="gmeta"><b>${esc(m.title || '')}</b>${esc([m.date, m.venue].filter(Boolean).join(' · '))}<br>
+     <span class="srcchip">${esc([src.device, src.resolution, src.fps && src.fps + ' fps', src.duration_s && fmtT(src.duration_s)].filter(Boolean).join(' · '))}</span></div>` +
+    side(b, true);
+})();
+
+/* ---------------- filter controls ---------------- */
+function seg(id, opts, key){
+  const box = $(id); box.innerHTML = opts.map(([v, l]) => `<button data-v="${v}" class="${S[key] === v ? 'on' : ''}">${esc(l)}</button>`).join('');
+  box.onclick = e => { const b = e.target.closest('button'); if (!b) return; S[key] = b.dataset.v;
+    box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); render(); };
+}
+seg('#f-team', [['all','Both'], ...G.teams.map(t => [t.id, t.name])], 'team');
+const periods = [...new Set(G.shots.map(s => s.period))].sort();
+seg('#f-period', [['all','All'], ...periods.map(p => [String(p), (G.meta.period_label || 'P') + p])], 'period');
+$('#f-result').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.result = b.dataset.v;
+  $('#f-result').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); render(); };
+$('#f-zone').onchange = e => { S.zone = e.target.value; render(); };
+$('#f-value').onchange = e => { S.value = e.target.value; render(); };
+$('#theme').onclick = () => { const r = document.documentElement; const cur = r.dataset.theme ||
+  (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); r.dataset.theme = cur === 'dark' ? 'light' : 'dark'; drawCourt(); render(); };
+
+/* ---------------- roster ---------------- */
+function buildRoster(){
+  $('#groups').innerHTML = G.teams.map(t => {
+    const ps = G.players.filter(p => p.team === t.id).sort((a, b) => (+a.number || 999) - (+b.number || 999));
+    return `<div class="tgroup"><div class="th"><span class="chip" style="background:${t.color}"></span>${esc(t.name)}</div><div class="plist">` +
+      ps.map(p => { const st = PS[p.id];
+        return `<div class="prow" data-pid="${p.id}"><span class="dot"></span><span class="jn">#${esc(p.number)}</span>
+          <span class="pn">${esc(p.name || 'Player ' + p.number)}</span><span class="pl num">${st.fgm}/${st.fga} · ${st.pts}p</span></div>`; }).join('') +
+      `</div></div>`; }).join('');
+  $('#groups').onclick = e => { const r = e.target.closest('.prow'); if (r) toggle(r.dataset.pid, e.shiftKey || e.metaKey || e.ctrlKey || S.multi); };
+}
+function toggle(pid, additive){
+  const i = S.sel.indexOf(pid);
+  if (additive) { i >= 0 ? S.sel.splice(i, 1) : S.sel.push(pid); }
+  else { S.sel = (i >= 0 && S.sel.length === 1) ? [] : [pid]; }
+  render();
+}
+$('#sel-all').onclick = () => { S.sel = []; render(); };
+$('#sel-none').onclick = () => { S.sel = []; S.pinned = null; render(); };
+
+/* ---------------- court drawing ---------------- */
+const svg = $('#court');
+const PAD = 2;
+svg.setAttribute('viewBox', `${-PAD} ${-PAD} ${L + 2*PAD} ${W + 2*PAD}`);
+let gShots;
+function arcPts(cx, cy, r, a0, a1, n = 48){ const pts = [];
+  for (let i = 0; i <= n; i++){ const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; pts.push(P(cx + r * Math.cos(a), cy + r * Math.sin(a))); }
+  return pts; }
+const poly = (pts, parent, extra = {}) => el('polyline', {points: pts.map(p => p.join(',')).join(' '), fill:'none', ...extra}, parent);
+function drawCourt(){
+  svg.innerHTML = '';
+  const cs = getComputedStyle(document.documentElement);
+  const line = cs.getPropertyValue('--court-line').trim(), paint = cs.getPropertyValue('--court-paint').trim(), floor = cs.getPropertyValue('--court').trim();
+  const g = el('g', {stroke: line, 'stroke-width': .28, fill: 'none', 'stroke-linejoin': 'round'}, svg);
+  el('rect', {x: 0, y: 0, width: L, height: W, fill: floor, stroke: line, 'stroke-width': .4, rx: .3}, g);
+  // half court
+  el('line', {x1: L/2, y1: 0, x2: L/2, y2: W}, g);
+  el('circle', {cx: L/2, cy: W/2, r: 6}, g);
+  el('circle', {cx: L/2, cy: W/2, r: 2}, g);
+  [0, 1].forEach(h => {
+    const hx = h ? L - C.hoop_offset : C.hoop_offset, sgn = h ? -1 : 1, base = h ? L : 0;
+    const ftx = base + sgn * C.ft_line;
+    // lane
+    const lx = Math.min(base, ftx);
+    const [rx, ry] = P(lx, W/2 + C.lane_width/2);
+    el('rect', {x: rx, y: ry, width: C.ft_line, height: C.lane_width, fill: paint}, g);
+    // FT circle
+    el('circle', {cx: ftx, cy: W/2, r: 6}, g);
+    // 3pt line
+    if (C.three_pt){
+      const r = C.three_pt, c = C.corner_three ?? r, bd = Math.sqrt(Math.max(r*r - c*c, 0));
+      const ang = Math.atan2(c, bd) * 180 / Math.PI;      // from the depth axis
+      const pts = [P(base, W/2 - c), P(hx + sgn * bd, W/2 - c)];
+      // arc from lateral -c to +c bulging toward mid-court
+      const a0 = h ? 180 + ang : -ang, a1 = h ? 180 - ang : ang;
+      arcPts(hx, W/2, r, a0, a1).forEach(p => pts.push(p));
+      pts.push(P(base, W/2 + c));
+      poly(pts, g);
+    }
+    // backboard + rim
+    const bbx = base + sgn * (C.hoop_offset - 1.25);
+    el('line', {x1: bbx, y1: W/2 - 3, x2: bbx, y2: W/2 + 3, 'stroke-width': .45}, g);
+    el('circle', {cx: hx, cy: W/2, r: .75, stroke: '#e0663a', 'stroke-width': .3}, g);
+    // restricted arc
+    poly(arcPts(hx, W/2, 4, h ? 90 : -90, h ? 270 : 90, 24), g, {'stroke-dasharray': '.6 .6'});
+  });
+  gShots = el('g', {}, svg);
+}
+
+/* ---------------- filtering ---------------- */
+function shotPass(s, ignoreSel){
+  if (S.team !== 'all' && s.team !== S.team) return false;
+  if (S.period !== 'all' && String(s.period) !== S.period) return false;
+  if (S.result === 'made' && !s.made) return false;
+  if (S.result === 'miss' && s.made) return false;
+  if (S.zone !== 'all' && s.zone !== S.zone) return false;
+  if (S.value !== 'all' && String(s.value) !== S.value) return false;
+  if (!ignoreSel && S.sel.length && !S.sel.includes(s.player)) return false;
+  return true;
+}
+
+/* ---------------- shots on court ---------------- */
+const tip = $('#tip'), card = $('#courtcard');
+function shotHTML(s){
+  const p = playerById[s.player], ast = s.assist && playerById[s.assist];
+  return `<b>${esc(pname(p))}</b> · ${esc((teamById[s.team]||{}).name || '')}<br>
+    <span style="color:${s.made ? 'var(--make)' : 'var(--miss)'};font-weight:700">${s.made ? 'MADE' : 'MISSED'}</span>
+    ${s.value === 1 ? 'free throw' : s.value + 'PT · ' + ZL[s.zone] + ' · ' + s.dist_ft + ' ft'}<br>
+    ${s.value !== 1 ? esc(AL[s.area] || '') + (s.kind ? ' · ' + (s.kind === 'catch' ? 'catch & shoot' : 'off dribble') : '') + '<br>' : ''}
+    ${ast ? 'Assist: ' + esc(pname(ast)) + '<br>' : ''}
+    ${(G.meta.period_label || 'P') + s.period} · video ${fmtT(s.t)}${s.loc_ok === false ? '<br><i>location approximate</i>' : ''}`;
+}
+function watchURL(s){
+  if (s.clip) return s.clip;
+  if (G.meta.video_url) return G.meta.video_url + '#t=' + Math.max(0, Math.round(s.t - 4));
+  return null;
+}
+function renderShots(){
+  gShots.innerHTML = '';
+  const shots = G.shots.filter(s => shotPass(s));
+  const labelled = S.sel.length > 0 && S.sel.length <= 4;
+  // misses first so makes sit on top
+  shots.sort((a, b) => a.made - b.made).forEach(s => {
+    const [x, y] = P(s.x, s.y);
+    const col = selColor(s.player) || teamColor(s.team);
+    const g = el('g', {class: 'shot', tabindex: 0, 'data-id': s.id, style: 'cursor:pointer'}, gShots);
+    const R = labelled ? 1.15 : .85;
+    if (s.made){
+      el('circle', {cx: x, cy: y, r: R, fill: col, stroke: 'var(--panel)', 'stroke-width': .22, opacity: s.loc_ok === false ? .55 : 1}, g);
+    } else {
+      const d = R * .78;
+      el('circle', {cx: x, cy: y, r: R, fill: 'transparent'}, g);  // hit area
+      el('path', {d: `M${x-d},${y-d}L${x+d},${y+d}M${x+d},${y-d}L${x-d},${y+d}`, stroke: col, 'stroke-width': .42, 'stroke-linecap': 'round', opacity: s.loc_ok === false ? .55 : 1}, g);
+    }
+    if (labelled){
+      const p = playerById[s.player];
+      const t = el('text', {x: s.made ? x : x + 1.25, y: s.made ? y + .42 : y - .9, 'font-size': 1.15, 'font-weight': 700,
+        'text-anchor': s.made ? 'middle' : 'start', fill: s.made ? '#fff' : col, style: 'pointer-events:none'}, g);
+      t.textContent = p ? p.number : '?';
+    }
+    if (S.pinned === s.id) el('circle', {cx: x, cy: y, r: R + .7, fill: 'none', stroke: 'var(--ink)', 'stroke-width': .2}, g);
+    g.addEventListener('mouseenter', ev => { tip.innerHTML = shotHTML(s); tip.classList.add('show'); moveTip(ev); });
+    g.addEventListener('mousemove', moveTip);
+    g.addEventListener('mouseleave', () => tip.classList.remove('show'));
+    g.addEventListener('click', ev => { ev.stopPropagation(); S.pinned = s.id; tip.classList.remove('show'); showPin(s); renderShots(); });
+    g.addEventListener('keydown', ev => { if (ev.key === 'Enter') { S.pinned = s.id; showPin(s); renderShots(); }});
+  });
+  const fg = shots.filter(s => s.value !== 1), m = fg.filter(s => s.made).length;
+  const ft = shots.filter(s => s.value === 1), fm = ft.filter(s => s.made).length;
+  $('#sum').textContent = `${m}/${fg.length} FG (${pct(fg.length ? 100*m/fg.length : null)})` + (ft.length ? ` · ${fm}/${ft.length} FT` : '');
+}
+function moveTip(ev){
+  const r = card.getBoundingClientRect();
+  let x = ev.clientX - r.left + 14, y = ev.clientY - r.top + 14;
+  if (x + 250 > r.width) x = ev.clientX - r.left - 254;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function showPin(s){
+  const pin = $('#pin'), url = watchURL(s);
+  pin.innerHTML = `<button class="x" aria-label="Close">×</button>${shotHTML(s)}
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      ${url ? `<a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch</a>` : ''}
+      <button class="btn" data-act="sel">Show only ${esc(pname(playerById[s.player]))}</button></div>`;
+  pin.classList.add('show');
+  pin.querySelector('.x').onclick = () => { S.pinned = null; pin.classList.remove('show'); renderShots(); };
+  pin.querySelector('[data-act=sel]').onclick = () => { S.sel = [s.player]; render(); };
+}
+svg.addEventListener('click', () => { S.pinned = null; $('#pin').classList.remove('show'); renderShots(); });
+
+function renderLegend(){
+  const cs = getComputedStyle(document.documentElement);
+  const mk = (col, made) => `<svg width="14" height="14" viewBox="-1 -1 2 2">${made ? `<circle r=".8" fill="${col}"/>` :
+    `<path d="M-.6,-.6L.6,.6M.6,-.6L-.6,.6" stroke="${col}" stroke-width=".32" stroke-linecap="round"/>`}</svg>`;
+  const ink = cs.getPropertyValue('--ink-2').trim();
+  let h = `<span class="k">${mk(ink, true)} Made</span><span class="k">${mk(ink, false)} Missed</span>`;
+  if (S.sel.length) h += S.sel.map(pid => `<span class="k">${mk(selColor(pid), true)} ${esc(pname(playerById[pid]))}</span>`).join('');
+  else h += G.teams.map(t => `<span class="k">${mk(teamColor(t.id), true)} ${esc(t.name)}</span>`).join('');
+  const dir = G.meta.direction_note;
+  if (dir) h += `<span class="dir">${esc(dir)}</span>`;
+  h += `<span class="dir">Tip: shift/⌘-click names to compare players</span>`;
+  $('#legend').innerHTML = h;
+}
+
+/* ---------------- detail panel ---------------- */
+function tile(v, l, s){ return `<div class="tile"><div class="v num">${v}</div><div class="l">${l}</div>${s ? `<div class="s num">${s}</div>` : ''}</div>`; }
+function zoneBars(st, col){
+  return `<div class="bars">` + ['rim','paint','mid','three'].map(z => { const d = st.zones[z];
+    return `<div class="row"><span>${ZL[z]}</span><div class="track"><div class="fill" style="width:${d.pct ?? 0}%;background:${col}"></div></div>
+      <span class="val num">${d.fga ? `${d.fgm}/${d.fga} · ${pct(d.pct)}` : '–'}</span></div>`; }).join('') +
+    `<div class="row"><span>Catch &amp; shoot</span><div class="track"><div class="fill" style="width:${st.kinds.catch.pct ?? 0}%;background:${col};opacity:.6"></div></div><span class="val num">${st.kinds.catch.fga ? `${st.kinds.catch.fgm}/${st.kinds.catch.fga} · ${pct(st.kinds.catch.pct)}` : '–'}</span></div>
+     <div class="row"><span>Off dribble</span><div class="track"><div class="fill" style="width:${st.kinds.dribble.pct ?? 0}%;background:${col};opacity:.6"></div></div><span class="val num">${st.kinds.dribble.fga ? `${st.kinds.dribble.fgm}/${st.kinds.dribble.fga} · ${pct(st.kinds.dribble.pct)}` : '–'}</span></div></div>`;
+}
+function areaStrip(st, col){
+  return `<div class="areas">` + ['left_corner','left_wing','middle','right_wing','right_corner'].map(a => { const d = st.areas[a];
+    const op = d.fga ? .12 + .55 * (d.pct || 0) / 100 : 0;
+    return `<div class="a" style="background:color-mix(in srgb, ${col} ${Math.round(op*100)}%, var(--panel-2))"><div class="p num">${d.fga ? pct(d.pct) : '–'}</div>
+      <div class="n num">${d.fgm}/${d.fga}</div><div class="t">${AL[a]}</div></div>`; }).join('') + `</div>`;
+}
+function heatSVG(st, col){
+  const cell = 6, s = [`<svg viewBox="-1 -1 ${L+2} ${W+2}" style="width:100%;height:auto;display:block">`];
+  s.push(`<rect x="0" y="0" width="${L}" height="${W}" fill="var(--court)" stroke="var(--court-line)" stroke-width=".4"/>`);
+  const max = Math.max(1, ...st.heat.map(h => h[2]));
+  st.heat.forEach(([c, r, v]) => { const [x, y] = P(c*cell, (r+1)*cell);
+    s.push(`<rect x="${x}" y="${y}" width="${Math.min(cell, L - c*cell)}" height="${Math.min(cell, W - r*cell)}" fill="${col}" opacity="${(.08 + .85 * v / max).toFixed(2)}"/>`); });
+  s.push(`<line x1="${L/2}" y1="0" x2="${L/2}" y2="${W}" stroke="var(--court-line)" stroke-width=".3"/><circle cx="${L/2}" cy="${W/2}" r="6" fill="none" stroke="var(--court-line)" stroke-width=".3"/>`);
+  [C.hoop_offset, L - C.hoop_offset].forEach(x => s.push(`<circle cx="${x}" cy="${W/2}" r=".9" fill="#e0663a"/>`));
+  s.push('</svg>'); return s.join('');
+}
+function insightsHTML(list){
+  if (!list || !list.length) return `<div class="id" style="color:var(--ink-3)">Not enough data for insights yet.</div>`;
+  return `<ul class="ins">` + list.map(i => `<li class="${i.kind}"><div><span class="tag">${i.kind === 'strength' ? 'Strength' : 'Work on'}</span><span class="it">${esc(i.title)}</span></div>
+    <div class="id">${esc(i.detail)}</div>${i.drill ? `<div class="dr">${esc(i.drill)}</div>` : ''}</li>`).join('') + `</ul>`;
+}
+const v = (x, suf = '') => x == null ? '–' : x + suf;
+function playerPanel(pid){
+  const p = playerById[pid], st = PS[pid], t = teamById[p.team], col = selColor(pid) || teamColor(p.team);
+  const shots = G.shots.filter(s => s.player === pid && shotPass(s, true)).sort((a, b) => a.t - b.t);
+  return `<div class="dhead"><span class="chip" style="width:14px;height:14px;border-radius:4px;background:${t.color};display:inline-block"></span>
+      <span class="big">#${esc(p.number)} ${esc(p.name || '')}</span><span class="sub">${esc(t.name)} · ${v(st.tracked_min)} min tracked</span></div>
+    <div class="tiles">${tile(st.pts, 'Points')}${tile(`${st.fgm}/${st.fga}`, 'FG', pct(st.fg_pct))}${tile(`${st.fg3m}/${st.fg3a}`, '3PT', pct(st.fg3_pct))}
+      ${tile(`${st.ftm}/${st.fta}`, 'FT', pct(st.ft_pct))}${tile(st.reb, 'Rebounds', `${st.oreb} off · ${st.dreb} def`)}${tile(st.ast, 'Assists', 'est.')}
+      ${tile(st.tov, 'Turnovers', st.stl + ' steals')}${tile(v(st.avg_dist_ft, ' ft'), 'Avg shot dist')}</div>
+    <div class="cols">
+      <div><h3>Shooting by zone</h3>${zoneBars(st, col)}<h3 style="margin-top:16px">By court area</h3>${areaStrip(st, col)}</div>
+      <div><h3>Where they played</h3>${heatSVG(st, col)}
+        <div class="mv" style="margin-top:10px">
+          <div><span>Distance / min</span><span class="num">${v(st.dist_per_min, ' ft')}</span></div>
+          <div><span>Top speed</span><span class="num">${v(st.top_speed_mph, ' mph')}</span></div>
+          <div><span>Time in paint</span><span class="num">${pct(st.paint_pct)}</span></div>
+          <div><span>Touches</span><span class="num">${v(st.touches)}</span></div>
+          <div><span>Avg touch</span><span class="num">${v(st.avg_touch_s, ' s')}</span></div>
+          <div><span>Spacing (off.)</span><span class="num">${v(st.spacing_ft, ' ft')}</span></div>
+          <div><span>Openness (off.)</span><span class="num">${v(st.open_ft, ' ft')}</span></div>
+          <div><span>Def. distance</span><span class="num">${v(st.pressure_ft, ' ft')}</span></div>
+        </div></div>
+      <div><h3>Coaching insights</h3>${insightsHTML(st.insights)}</div>
+    </div>
+    <h3 style="margin-top:18px">Shot log (${shots.length})</h3>
+    <div class="tablewrap"><table class="num"><thead><tr><th>Video</th><th>Result</th><th>Type</th><th>Zone</th><th>Area</th><th>Dist</th><th>How</th><th>Assist</th><th></th></tr></thead><tbody>
+    ${shots.map(s => { const u = watchURL(s); return `<tr data-shot="${s.id}"><td>${fmtT(s.t)}</td><td style="color:${s.made ? 'var(--make)' : 'var(--miss)'};font-weight:650">${s.made ? 'Made' : 'Missed'}</td>
+      <td>${s.value === 1 ? 'FT' : s.value + 'PT'}</td><td>${ZL[s.zone]}</td><td>${s.value === 1 ? '' : AL[s.area]}</td><td>${s.value === 1 ? '' : s.dist_ft + ' ft'}</td>
+      <td>${s.kind === 'catch' ? 'Catch' : s.kind === 'dribble' ? 'Dribble' : ''}</td><td>${s.assist ? esc(pname(playerById[s.assist])) : ''}</td>
+      <td>${u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶</a>` : ''}</td></tr>`; }).join('')}
+    </tbody></table></div>`;
+}
+function comparePanel(){
+  const rows = [['Points','pts'],['FG','fg'],['FG%','fg_pct','%'],['3PT','fg3'],['FT','ft'],['At rim %','z_rim','%'],['Mid-range %','z_mid','%'],['Three %','z_three','%'],
+    ['Rebounds','reb'],['Assists','ast'],['Turnovers','tov'],['Min tracked','tracked_min'],['Distance / min','dist_per_min',' ft'],['Avg touch','avg_touch_s',' s'],['Spacing','spacing_ft',' ft']];
+  const get = (st, k) => k === 'fg' ? `${st.fgm}/${st.fga}` : k === 'fg3' ? `${st.fg3m}/${st.fg3a}` : k === 'ft' ? `${st.ftm}/${st.fta}` :
+    k.startsWith('z_') ? st.zones[k.slice(2)].pct : st[k];
+  return `<div class="dhead"><span class="big">Comparing ${S.sel.length} players</span><span class="sub">click a name to remove it</span></div>
+   <div class="tablewrap"><table class="num"><thead><tr><th></th><th></th>${S.sel.map(pid => `<th style="color:${selColor(pid)}">${esc(pname(playerById[pid]))}</th>`).join('')}</tr></thead><tbody>
+   ${rows.map(([l, k, suf]) => `<tr><td>${l}</td><td></td>${S.sel.map(pid => { const x = get(PS[pid], k); return `<td>${x == null ? '–' : (suf === '%' ? pct(x) : x + (suf || ''))}</td>`; }).join('')}</tr>`).join('')}
+   </tbody></table></div>`;
+}
+function flowSVG(){
+  const flow = ST.flow, ov = G.overlay || [];
+  const T = Math.max(G.meta.source?.duration_s || 0, ...flow.map(f => f.t), ...ov.map(o => o.t), 1);
+  const M = Math.max(1, ...flow.flatMap(f => G.teams.map(t => f[t.id])), ...ov.flatMap(o => G.teams.map(t => o[t.id] || 0)));
+  const w = 600, h = 180, pl = 30, pb = 22, X = t => pl + (w - pl - 8) * t / T, Y = s => h - pb - (h - pb - 8) * s / M;
+  let s = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block" class="num">`;
+  for (let k = 0; k <= 4; k++){ const sc = Math.round(M * k / 4); s += `<line x1="${pl}" x2="${w-8}" y1="${Y(sc)}" y2="${Y(sc)}" stroke="var(--line)"/><text x="${pl-6}" y="${Y(sc)+4}" text-anchor="end" font-size="10" fill="var(--ink-3)">${sc}</text>`; }
+  for (let k = 0; k <= 4; k++){ const tt = T * k / 4; s += `<text x="${X(tt)}" y="${h-6}" text-anchor="${k === 0 ? 'start' : k === 4 ? 'end' : 'middle'}" font-size="10" fill="var(--ink-3)">${fmtT(tt)}</text>`; }
+  const labels = [];
+  G.teams.forEach(t => {
+    const col = teamColor(t.id);
+    let d = `M${X(0)},${Y(0)}`, last = 0; flow.forEach(f => { d += `H${X(f.t)}V${Y(f[t.id])}`; last = f[t.id]; }); d += `H${X(T)}`;
+    s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.2"/>`;
+    if (ov.length){ let d2 = `M${X(0)},${Y(0)}`; ov.forEach(o => { d2 += `H${X(o.t)}V${Y(o[t.id] || 0)}`; }); d2 += `H${X(T)}`;
+      s += `<path d="${d2}" fill="none" stroke="${col}" stroke-width="1.2" stroke-dasharray="4 3" opacity=".7"/>`; }
+    labels.push({y: Y(last) - 6, col, name: t.name, pts: last});
+  });
+  s += `<g font-size="11" font-weight="700">` + labels.map((l, i) => `<text x="${pl + 8}" y="${16 + i * 14}" fill="${l.col}">${esc(l.name)} ${l.pts}</text>`).join('') + `</g>`;
+  return s + `</svg><div class="est">Solid = detected makes · dashed = ScoreSync scoreboard overlay</div>`;
+}
+function teamPanel(){
+  const ts = S.team === 'all' ? G.teams : G.teams.filter(t => t.id === S.team);
+  return `<div class="dhead"><span class="big">Team overview</span><span class="sub">Pick a player on the left to see their breakdown</span></div>
+   <div class="cols">${ts.map(t => { const st = TS[t.id], col = teamColor(t.id);
+     return `<div><h3><span class="chip" style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${t.color};margin-right:6px"></span>${esc(t.name)}</h3>
+       <div class="tiles">${tile(`${st.fgm}/${st.fga}`, 'FG', pct(st.fg_pct))}${tile(`${st.fg3m}/${st.fg3a}`, '3PT', pct(st.fg3_pct))}${tile(`${st.ftm}/${st.fta}`, 'FT', pct(st.ft_pct))}
+       ${tile(st.reb, 'Rebounds', pct(st.oreb_pct) + ' off. reb rate')}${tile(st.ast, 'Assists', pct(st.assisted_pct) + ' assisted')}${tile(st.tov, 'Turnovers')}</div>
+       ${zoneBars(st, col)}<h3 style="margin-top:14px">By court area</h3>${areaStrip(st, col)}
+       <h3 style="margin-top:14px">Team insights</h3>${insightsHTML(st.insights)}</div>`; }).join('')}</div>
+     <h3 style="margin-top:18px">Score flow</h3><div style="max-width:900px">${flowSVG()}</div>`;
+}
+function renderDetail(){
+  $('#detail').innerHTML = S.sel.length === 1 ? playerPanel(S.sel[0]) : S.sel.length > 1 ? comparePanel() : teamPanel();
+  $('#detail').querySelectorAll('tr[data-shot]').forEach(r => r.onclick = () => {
+    const s = G.shots.find(x => x.id == r.dataset.shot); S.pinned = s.id; showPin(s); renderShots();
+    $('#courtcard').scrollIntoView({behavior: 'smooth', block: 'center'}); });
+}
+
+/* ---------------- box score ---------------- */
+const COLS = [['number','#'],['name','Player'],['tracked_min','Min'],['pts','Pts'],['fg','FG'],['fg_pct','FG%'],['fg3','3PT'],['ft','FT'],
+  ['oreb','Oreb'],['dreb','Dreb'],['ast','Ast'],['tov','Tov'],['stl','Stl'],['touches','Tch']];
+function cell(p, st, k){
+  if (k === 'number') return '#' + esc(p.number);
+  if (k === 'name') return esc(p.name || 'Player ' + p.number);
+  if (k === 'fg') return `${st.fgm}/${st.fga}`; if (k === 'fg3') return `${st.fg3m}/${st.fg3a}`; if (k === 'ft') return `${st.ftm}/${st.fta}`;
+  if (k === 'fg_pct') return pct(st.fg_pct);
+  return st[k] ?? '–';
+}
+function sortVal(p, st, k){ if (k === 'number') return +p.number || 999; if (k === 'name') return p.name || '';
+  if (k === 'fg') return st.fgm; if (k === 'fg3') return st.fg3m; if (k === 'ft') return st.ftm; return st[k] ?? -1; }
+function renderBox(){
+  const ts = S.team === 'all' ? G.teams : G.teams.filter(t => t.id === S.team);
+  $('#box').innerHTML = ts.map(t => {
+    const ps = G.players.filter(p => p.team === t.id).sort((a, b) => { const x = sortVal(a, PS[a.id], S.sort.k), y = sortVal(b, PS[b.id], S.sort.k);
+      return (x > y ? 1 : x < y ? -1 : 0) * S.sort.d; });
+    const tt = TS[t.id];
+    return `<h3 style="margin-top:12px"><span class="chip" style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${t.color};margin-right:6px"></span>${esc(t.name)}</h3>
+     <div class="tablewrap"><table class="num"><thead><tr>${COLS.map(([k, l]) => `<th data-k="${k}">${l}${S.sort.k === k ? (S.sort.d < 0 ? ' ▾' : ' ▴') : ''}</th>`).join('')}</tr></thead>
+     <tbody>${ps.map(p => `<tr data-pid="${p.id}" class="${S.sel.includes(p.id) ? 'on' : ''}" style="--pc:${selColor(p.id) || 'transparent'}">${COLS.map(([k]) => `<td>${cell(p, PS[p.id], k)}</td>`).join('')}</tr>`).join('')}</tbody>
+     <tfoot><tr><td></td><td>Team</td><td></td><td>${tt.pts}</td><td>${tt.fgm}/${tt.fga}</td><td>${pct(tt.fg_pct)}</td><td>${tt.fg3m}/${tt.fg3a}</td><td>${tt.ftm}/${tt.fta}</td>
+       <td>${tt.oreb}</td><td>${tt.dreb}</td><td>${tt.ast}</td><td>${tt.tov}</td><td>${tt.stl}</td><td>${tt.touches}</td></tr></tfoot></table></div>`; }).join('');
+  $('#box').querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k;
+    S.sort = {k, d: S.sort.k === k ? -S.sort.d : (k === 'name' || k === 'number' ? 1 : -1)}; renderBox(); });
+  $('#box').querySelectorAll('tbody tr').forEach(r => r.onclick = e => toggle(r.dataset.pid, e.shiftKey || e.metaKey || e.ctrlKey));
+}
+
+/* ---------------- data quality ---------------- */
+(function quality(){
+  const q = G.quality || {};
+  const items = [['Court registration', q.registration_pct != null ? q.registration_pct + '% of frames' : null],
+    ['Shots detected', G.shots.length], ['Shots with exact location', G.shots.filter(s => s.loc_ok !== false).length],
+    ['Players identified', q.identified_pct != null ? q.identified_pct + '% of on-court time' : null],
+    ['Scoreboard check', G.teams.map(t => TS[t.id].overlay_pts != null ? `${t.name}: ${TS[t.id].pts} detected vs ${TS[t.id].overlay_pts} scoreboard` : null).filter(Boolean).join(' · ') || null]];
+  $('#qual').innerHTML = items.filter(i => i[1] != null).map(([l, x]) => `<span>${l}: <b>${esc(x)}</b></span>`).join('');
+  const unk = G.unidentified || [];
+  $('#unk').innerHTML = unk.length ? `<div style="font-size:13px;color:var(--ink-2);margin-bottom:8px">Players the pipeline couldn't match to a jersey number. Add a line to <code>overrides.yaml</code> (e.g. <code>${esc(unk[0].track)}: ${esc(G.players[0].id)}</code>) and re-run <code>python run.py analyze</code>.</div>
+    <div class="gallery">${unk.map(u => `<div class="g"><img alt="" src="${u.thumb || ''}"><b>${esc(u.track)}</b><br>${esc((teamById[u.team]||{}).name || 'team ?')} · ${fmtT(u.seconds || 0)} on court</div>`).join('')}</div>` : '';
+  $('#foot').innerHTML = `Generated by hoopstats · ${esc(G.meta.generated || '')}<br>Estimated stats are for player development trends, not an official box score.`;
+})();
+
+/* ---------------- render ---------------- */
+function render(){
+  document.querySelectorAll('.prow').forEach(r => { const c = selColor(r.dataset.pid); r.classList.toggle('on', !!c); r.style.setProperty('--pc', c || 'transparent'); });
+  renderShots(); renderLegend(); renderDetail(); renderBox();
+}
+buildRoster(); drawCourt(); render();
+})();
+</script>
+</body>
+</html>
